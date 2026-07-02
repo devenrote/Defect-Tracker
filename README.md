@@ -1,4 +1,4 @@
-# Defect Tracker Pro
+# Defect Tracker
 
 A production-ready defect tracking system for software companies. Manage bugs, assign defects to developers, track status workflows, upload screenshots, and monitor project health through role-based dashboards.
 
