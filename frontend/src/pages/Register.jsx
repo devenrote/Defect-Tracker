@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, ArrowRight } from 'lucide-react';
+import { ShieldCheck, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const Register = () => {
   const { login } = useAuth();
@@ -20,12 +20,13 @@ const Register = () => {
       toast.success('Registration successful!');
       navigate('/dashboard');
     } catch (error) {
-      // Mock signup fallback for testing
-      const mockUser = {
+      // Fallback local mock login in case backend is offline
+      let mockUser = {
         full_name: data.full_name,
         email: data.email,
-        role: data.role
+        role: 'tester'
       };
+      
       login(mockUser, 'mock_jwt_token_xxxxx');
       toast.success('Registration successful (Offline Preview Mode)!');
       navigate('/dashboard');
@@ -40,7 +41,15 @@ const Register = () => {
       {/* Background grid decoration */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30 dark:opacity-40"></div>
       
-      <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-premium dark:shadow-premiumDark border border-slate-200 dark:border-slate-800 p-8 w-full max-w-md transition-all duration-200 z-10">
+      <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-premium dark:shadow-premiumDark border border-slate-200 dark:border-slate-800 p-8 pt-14 w-full max-w-md transition-all duration-200 z-10">
+        
+        {/* Back to Home Link */}
+        <Link 
+          to="/" 
+          className="absolute left-6 top-6 inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-indigo-650 transition-colors uppercase tracking-wider"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
+        </Link>
         
         {/* Top brand icon */}
         <div className="flex flex-col items-center mb-6">
@@ -48,7 +57,7 @@ const Register = () => {
             <ShieldCheck className="w-6 h-6" />
           </div>
           <h1 className="text-xl font-black text-slate-850 dark:text-white tracking-tight">Create Workspace Account</h1>
-          <p className="text-xs text-slate-400 dark:text-slate-550 mt-1">Join DefectTracker Pro Quality Portal</p>
+          <p className="text-xs text-slate-400 dark:text-slate-550 mt-1">Join DefectTracker Quality Portal</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

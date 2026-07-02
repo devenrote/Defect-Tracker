@@ -197,7 +197,7 @@ const Defects = () => {
 
           {/* Advanced filter toggles grid */}
           {showAdvancedFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 animate-fadeIn">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 animate-fadeIn">
               
               {/* Projects dropdown */}
               <div>
@@ -268,7 +268,7 @@ const Defects = () => {
               </div>
 
               {/* Date Ranges */}
-              <div className="sm:col-span-2 md:col-span-3 lg:col-span-1">
+              <div className="sm:col-span-2 md:col-span-3 lg:col-span-2">
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Date Range</label>
                 <div className="flex items-center gap-1">
                   <input

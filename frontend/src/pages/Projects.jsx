@@ -7,8 +7,10 @@ import StatusBadge from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { projectAPI } from '../services/api';
 import { FolderKanban, Plus, Edit, Trash2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Projects = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -116,18 +118,20 @@ const Projects = () => {
           <h1 className="text-base font-bold text-slate-800 dark:text-white">All Projects</h1>
           <p className="text-xs text-slate-500 mt-0.5">Manage and track workspace projects</p>
         </div>
-        <button 
-          onClick={() => { setEditingProject(null); setForm({ project_name: '', description: '', status: 'active' }); setShowModal(true); }} 
-          className="btn-primary text-xs"
-        >
-          <Plus className="w-4 h-4" /> Create Project
-        </button>
+        {user?.role === 'admin' && (
+          <button 
+            onClick={() => { setEditingProject(null); setForm({ project_name: '', description: '', status: 'active' }); setShowModal(true); }} 
+            className="btn-primary text-xs"
+          >
+            <Plus className="w-4 h-4" /> Create Project
+          </button>
+        )}
       </div>
 
       {loading ? <div className="text-center mt-20"><LoadingSpinner /></div> : (
         <div className="card">
           <DataTable 
-            columns={columns} 
+            columns={user?.role === 'admin' ? columns : columns.filter(c => c.header !== 'Actions')} 
             data={projects} 
             searchable 
             searchPlaceholder="Search projects..."

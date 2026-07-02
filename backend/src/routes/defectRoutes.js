@@ -14,7 +14,7 @@ router.get('/reports', authorize('admin'), defectController.getReports);
 router.get('/', defectController.getAllDefects);
 router.get('/:id', defectController.getDefectById);
 router.post('/', upload.single('screenshot'), defectValidation, validate, defectController.createDefect);
-router.put('/:id', defectController.updateDefect);
+router.put('/:id', upload.single('screenshot'), defectController.updateDefect);
 router.delete('/:id', authorize('admin'), defectController.deleteDefect);
 
 module.exports = router;

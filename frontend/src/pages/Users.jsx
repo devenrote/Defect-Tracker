@@ -6,8 +6,10 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { userAPI } from '../services/api';
 import api from '../services/api';
 import { UserPlus, UserCheck, Shield, Key, Save } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Users = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterRole, setFilterRole] = useState('');
@@ -99,12 +101,14 @@ const Users = () => {
             <h1 className="text-base font-bold text-slate-800 dark:text-white">Workspace Users</h1>
             <p className="text-xs text-slate-500 mt-0.5">Manage permission roles, assign project managers, developers, and testers</p>
           </div>
-          <button 
-            onClick={() => setShowAddModal(true)} 
-            className="btn-primary text-xs"
-          >
-            <UserPlus className="w-4 h-4" /> Create User
-          </button>
+          {user?.role === 'admin' && (
+            <button 
+              onClick={() => setShowAddModal(true)} 
+              className="btn-primary text-xs"
+            >
+              <UserPlus className="w-4 h-4" /> Create User
+            </button>
+          )}
         </div>
 
         {/* Filters Toolbar */}
@@ -122,7 +126,9 @@ const Users = () => {
               <option value="developer">Developer</option>
             </select>
           </div>
-          <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-850 px-3 py-1 rounded-full">{users.length} Users Total</span>
+          <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-850 px-3 py-1 rounded-full">
+            {(user?.role === 'admin' ? users : users.filter(u => u.role === 'developer' || u.role === 'tester')).length} Users Total
+          </span>
         </div>
 
         {/* Data Table */}
@@ -132,7 +138,7 @@ const Users = () => {
           <div className="card">
             <DataTable 
               columns={columns} 
-              data={users} 
+              data={user?.role === 'admin' ? users : users.filter(u => u.role === 'developer' || u.role === 'tester')} 
               searchable 
               searchPlaceholder="Search users by name or email..."
               pagination 

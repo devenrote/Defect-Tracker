@@ -3,7 +3,12 @@ const projectService = require('../services/projectService');
 class ProjectController {
   async getAllProjects(req, res, next) {
     try {
-      const projects = await projectService.getAllProjects(req.query);
+      const filters = {
+        ...req.query,
+        user_id: req.user.id,
+        role: req.user.role
+      };
+      const projects = await projectService.getAllProjects(filters);
       res.json({ success: true, data: projects });
     } catch (error) {
       next(error);
@@ -12,7 +17,7 @@ class ProjectController {
 
   async getProjectById(req, res, next) {
     try {
-      const project = await projectService.getProjectById(req.params.id);
+      const project = await projectService.getProjectById(req.params.id, req.user);
       res.json({ success: true, data: project });
     } catch (error) {
       next(error);
@@ -48,7 +53,7 @@ class ProjectController {
 
   async getProjectStatistics(req, res, next) {
     try {
-      const stats = await projectService.getProjectStatistics(req.params.id);
+      const stats = await projectService.getProjectStatistics(req.params.id, req.user);
       res.json({ success: true, data: stats });
     } catch (error) {
       next(error);

@@ -15,6 +15,11 @@ class DefectRepository {
     `;
     const params = [];
 
+    if (filters.user_id && filters.role !== 'admin') {
+      query += ' AND d.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      params.push(filters.user_id);
+    }
+
     if (filters.project_id) {
       query += ' AND d.project_id = ?';
       params.push(filters.project_id);
@@ -130,49 +135,98 @@ class DefectRepository {
       query += ' AND assignee_id = ?';
       params.push(filters.assigned_to);
     }
+    if (filters.project_id) {
+      query += ' AND project_id = ?';
+      params.push(filters.project_id);
+    }
 
     const [rows] = await pool.execute(query, params);
     return rows[0].count;
   }
 
-  async getBySeverity() {
-    const [rows] = await pool.execute(
-      'SELECT severity, COUNT(*) as count FROM issues GROUP BY severity'
-    );
+  async getBySeverity(filters = {}) {
+    let query = 'SELECT severity, COUNT(*) as count FROM issues WHERE 1=1';
+    const params = [];
+    if (filters.reported_by) {
+      query += ' AND reporter_id = ?';
+      params.push(filters.reported_by);
+    }
+    if (filters.assigned_to) {
+      query += ' AND assignee_id = ?';
+      params.push(filters.assigned_to);
+    }
+    if (filters.project_id) {
+      query += ' AND project_id = ?';
+      params.push(filters.project_id);
+    }
+    query += ' GROUP BY severity';
+    const [rows] = await pool.execute(query, params);
     return rows;
   }
 
-  async getByStatus() {
-    const [rows] = await pool.execute(
-      'SELECT status, COUNT(*) as count FROM issues GROUP BY status'
-    );
+  async getByStatus(filters = {}) {
+    let query = 'SELECT status, COUNT(*) as count FROM issues WHERE 1=1';
+    const params = [];
+    if (filters.reported_by) {
+      query += ' AND reporter_id = ?';
+      params.push(filters.reported_by);
+    }
+    if (filters.assigned_to) {
+      query += ' AND assignee_id = ?';
+      params.push(filters.assigned_to);
+    }
+    if (filters.project_id) {
+      query += ' AND project_id = ?';
+      params.push(filters.project_id);
+    }
+    query += ' GROUP BY status';
+    const [rows] = await pool.execute(query, params);
     return rows;
   }
 
-  async getByProject() {
-    const [rows] = await pool.execute(
-      `SELECT p.project_name, COUNT(d.id) as count 
-       FROM projects p LEFT JOIN issues d ON p.id = d.project_id 
-       GROUP BY p.id, p.project_name`
-    );
+  async getByProject(filters = {}) {
+    let sql = `
+      SELECT p.project_name, COUNT(d.id) as count 
+      FROM projects p LEFT JOIN issues d ON p.id = d.project_id 
+    `;
+    const params = [];
+    if (filters.user_id && filters.role !== 'admin') {
+      sql += ' INNER JOIN project_members pm ON p.id = pm.project_id WHERE pm.user_id = ?';
+      params.push(filters.user_id);
+    }
+    sql += ' GROUP BY p.id, p.project_name';
+    const [rows] = await pool.execute(sql, params);
     return rows;
   }
 
-  async getByDeveloper() {
-    const [rows] = await pool.execute(
-      `SELECT u.full_name as developer_name, COUNT(d.id) as count 
-       FROM users u LEFT JOIN issues d ON u.id = d.assignee_id 
-       WHERE u.role = 'developer' GROUP BY u.id, u.full_name`
-    );
+  async getByDeveloper(filters = {}) {
+    let sql = `
+      SELECT u.full_name as developer_name, COUNT(d.id) as count 
+      FROM users u LEFT JOIN issues d ON u.id = d.assignee_id 
+      WHERE u.role = 'developer'
+    `;
+    const params = [];
+    if (filters.user_id && filters.role !== 'admin') {
+      sql += ' AND d.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      params.push(filters.user_id);
+    }
+    sql += ' GROUP BY u.id, u.full_name';
+    const [rows] = await pool.execute(sql, params);
     return rows;
   }
 
-  async getMonthlyTrends() {
-    const [rows] = await pool.execute(
-      `SELECT TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as count 
-       FROM issues GROUP BY TO_CHAR(created_at, 'YYYY-MM') 
-       ORDER BY month ASC`
-    );
+  async getMonthlyTrends(filters = {}) {
+    let sql = `
+      SELECT TO_CHAR(created_at, 'YYYY-MM') as month, COUNT(*) as count 
+      FROM issues WHERE 1=1
+    `;
+    const params = [];
+    if (filters.user_id && filters.role !== 'admin') {
+      sql += ' AND project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      params.push(filters.user_id);
+    }
+    sql += " GROUP BY TO_CHAR(created_at, 'YYYY-MM') ORDER BY month ASC";
+    const [rows] = await pool.execute(sql, params);
     return rows;
   }
 

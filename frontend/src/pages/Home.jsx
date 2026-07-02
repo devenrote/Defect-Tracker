@@ -90,13 +90,14 @@ const Home = () => {
             <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-md shadow-indigo-200">
               <Bug className="w-5 h-5" />
             </div>
-            <span className="text-base font-extrabold text-slate-900 tracking-tight">Defect Tracker Pro</span>
+            <span className="text-base font-extrabold text-slate-900 tracking-tight">Defect Tracker</span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-500">
+          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold text-slate-500">
             <a href="#features" className="hover:text-indigo-600 transition-colors">Features</a>
             <a href="#workflow" className="hover:text-indigo-600 transition-colors">Workflow</a>
-            <a href="#pricing" className="hover:text-indigo-600 transition-colors">Pricing</a>
+            <a href="#services" className="hover:text-indigo-600 transition-colors">Services</a>
+            <a href="#contact" className="hover:text-indigo-600 transition-colors">Contact</a>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -124,7 +125,7 @@ const Home = () => {
           
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 border border-indigo-100/80 rounded-full text-indigo-700 text-xs font-semibold shadow-sm animate-pulse">
             <Zap className="w-3.5 h-3.5" />
-            <span>Introducing Defect Tracker Pro v1.0</span>
+            <span>Introducing Defect Tracker v1.0</span>
           </div>
 
           <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1] max-w-4xl mx-auto">
@@ -250,6 +251,156 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Services Section */}
+      <section id="services" className="py-20 bg-white border-y border-slate-200/60 px-6">
+        <div className="max-w-6xl mx-auto space-y-14">
+          <div className="text-center space-y-3">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Our Enterprise Services</h2>
+            <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
+              We offer bespoke solutions and implementation services to guarantee the success of your engineering organization.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+              <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
+                <FolderKanban className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-800">Custom Tooling & Integrations</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Migrate your legacy data from JIRA, Bugzilla, or Redmine into Defect Tracker. We build custom data hooks, custom fields, and synchronize your Slack / Teams channels.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+              <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
+                <ShieldCheck className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-800">QA Consulting & Audit Setup</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Establish standard operational procedures for filing bugs and tracking SLAs. Our architects will construct custom status pipelines, verify templates, and train your staff.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+              <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
+                <Zap className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-800">Managed Dedicated Hosting</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Deploy Defect Tracker on a dedicated cloud cluster. Includes weekly automated PostgreSQL backups, secure VPC setups, regional data compliance, and 99.9% uptime guarantees.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+              <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
+                <Activity className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-800">24/7 Enterprise SLA Support</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Access a dedicated Slack channel with direct engineer-level support. We resolve configuration issues and deploy custom security patches under a 4-hour SLA.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-20 px-6">
+        <div className="max-w-6xl mx-auto space-y-14">
+          <div className="text-center space-y-3">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Connect With Us</h2>
+            <p className="text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
+              Have questions about pricing, self-hosting, or custom features? Drop us a line.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+            
+            {/* Info panel */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-slate-50 border border-slate-200/70 p-6 rounded-2xl space-y-6 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 tracking-tight">Contact Information</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-600 text-xs">
+                      📧
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Sales & Support</p>
+                      <a href="mailto:support@defecttracker.com" className="text-xs font-semibold text-slate-700 hover:text-indigo-650 transition-colors">support@defecttracker.com</a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-600 text-xs">
+                      📞
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Phone Support</p>
+                      <p className="text-xs font-semibold text-slate-700">+1 (800) 555-0199</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-600 text-xs">
+                      📍
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Headquarters</p>
+                      <p className="text-xs font-semibold text-slate-700 leading-relaxed">100 Pine Street, San Francisco, CA 94111</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Panel */}
+            <div className="lg:col-span-3">
+              <form onSubmit={(e) => { e.preventDefault(); alert('Message sent successfully! Our team will reach out shortly.'); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Your Name</label>
+                    <input type="text" required className="input-field text-sm" placeholder="John Doe" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Business Email</label>
+                    <input type="email" required className="input-field text-sm" placeholder="john@company.com" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Subject</label>
+                  <input type="text" required className="input-field text-sm" placeholder="e.g. Enterprise Migration Quote" />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Message</label>
+                  <textarea required rows={4} className="input-field text-sm" placeholder="Describe your team size, custom needs, or questions..." />
+                </div>
+
+                <div className="flex justify-end">
+                  <button type="submit" className="btn-primary px-6 py-2.5 text-xs font-bold shadow-md shadow-indigo-100 cursor-pointer">
+                    Send Inquiry
+                  </button>
+                </div>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12 px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
@@ -262,7 +413,7 @@ const Home = () => {
                 <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-md shadow-indigo-100">
                   <Bug className="w-5 h-5" />
                 </div>
-                <span className="text-base font-extrabold text-slate-950 tracking-tight">Defect Tracker Pro</span>
+                <span className="text-base font-extrabold text-slate-950 tracking-tight">Defect Tracker</span>
               </div>
               <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
                 The enterprise-grade issue tracking platform built to align managers, testers, and developers on a unified quality engineering dashboard.
@@ -280,9 +431,9 @@ const Home = () => {
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Product</h4>
               <ul className="space-y-2 text-xs font-semibold text-slate-500">
                 <li><a href="#features" className="hover:text-indigo-600 transition-colors">Features Matrix</a></li>
-                <li><a href="#workflow" className="hover:text-indigo-600 transition-colors">Workflow pipeline</a></li>
-                <li><Link to="/login" className="hover:text-indigo-600 transition-colors">Sandbox Demo</Link></li>
-                <li><a href="#pricing" className="hover:text-indigo-600 transition-colors">Pricing Options</a></li>
+                <li><a href="#workflow" className="hover:text-indigo-600 transition-colors">Workflow Pipeline</a></li>
+                <li><a href="#services" className="hover:text-indigo-600 transition-colors">Enterprise Services</a></li>
+                <li><a href="#contact" className="hover:text-indigo-600 transition-colors">Contact Support</a></li>
               </ul>
             </div>
 
@@ -312,7 +463,7 @@ const Home = () => {
 
           {/* Subfooter */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-400">
-            <p>© {new Date().getFullYear()} Defect Tracker Pro Inc. Enterprise QA Engine. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Defect Tracker Inc. Enterprise QA Engine. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <a href="#" className="hover:text-indigo-600 transition-colors">Terms</a>
               <a href="#" className="hover:text-indigo-600 transition-colors">Privacy</a>

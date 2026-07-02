@@ -105,6 +105,20 @@ const seed = async () => {
   );
 
   await client.query(
+    `INSERT INTO project_members (project_id, user_id, project_role) VALUES
+      (1, 6, 'manager'),
+      (1, 4, 'developer'),
+      (1, 2, 'tester'),
+      (2, 5, 'developer'),
+      (2, 3, 'tester'),
+      (3, 6, 'manager'),
+      (3, 4, 'developer'),
+      (3, 3, 'tester'),
+      (4, 5, 'developer'),
+      (4, 2, 'tester');`
+  );
+
+  await client.query(
     `INSERT INTO notifications (user_id, type, title, message, is_read, issue_id) VALUES
       ($1, $2, $3, $4, $5, $6),
       ($7, $8, $9, $10, $11, $12),

@@ -13,7 +13,10 @@ import {
   Settings, 
   ChevronLeft,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Bell,
+  Edit,
+  Activity
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -38,9 +41,11 @@ const Sidebar = () => {
     if (role === 'manager' || role === 'project_manager') {
       return [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/projects', label: 'Projects', icon: FolderKanban },
+        { to: '/projects', label: 'My Projects', icon: FolderKanban },
         { to: '/defects', label: 'Defects', icon: Bug },
+        { to: '/users', label: 'Team Members', icon: Users },
         { to: '/reports', label: 'Reports', icon: BarChart3 },
+        { to: '/notifications', label: 'Notifications', icon: Bell },
       ];
     }
     
@@ -50,6 +55,8 @@ const Sidebar = () => {
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/create-defect', label: 'Report Defect', icon: PlusCircle },
         { to: '/my-defects', label: 'My Defects', icon: Bug },
+        { to: '/update-defect', label: 'Update Defect', icon: Edit },
+        { to: '/verification-queue', label: 'Verification Queue', icon: Activity },
       ];
     }
     
@@ -127,24 +134,26 @@ const Sidebar = () => {
 
       {/* Footer Settings & Profile */}
       <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-1">
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 relative group ${
-              isActive
-                ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white'
-            }`
-          }
-        >
-          <Settings className="w-5 h-5 text-slate-400 dark:text-slate-500 shrink-0" />
-          {!isCollapsed && <span>Settings</span>}
-          {isCollapsed && (
-            <div className="absolute left-full ml-4 px-2.5 py-1.5 bg-slate-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-md">
-              Settings
-            </div>
-          )}
-        </NavLink>
+        {user?.role === 'admin' && (
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 relative group ${
+                isActive
+                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white'
+              }`
+            }
+          >
+            <Settings className="w-5 h-5 text-slate-400 dark:text-slate-500 shrink-0" />
+            {!isCollapsed && <span>Settings</span>}
+            {isCollapsed && (
+              <div className="absolute left-full ml-4 px-2.5 py-1.5 bg-slate-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-md">
+                Settings
+              </div>
+            )}
+          </NavLink>
+        )}
         
         <NavLink
           to="/profile"

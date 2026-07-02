@@ -34,57 +34,76 @@ import StatCard from '../components/StatCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import StatusBadge from '../components/StatusBadge';
 import SeverityBadge from '../components/SeverityBadge';
-import { defectAPI } from '../services/api';
+import { defectAPI, projectAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState('');
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const loadProjectsAndStats = async () => {
+      // Load projects once
       try {
-        const res = await defectAPI.getDashboardStats();
+        if (projects.length === 0) {
+          const projRes = await projectAPI.getAll({ status: 'active' });
+          setProjects(projRes.data.data);
+        }
+      } catch (err) {
+        setProjects([
+          { id: 1, name: 'Project Alpha Integration', project_name: 'Project Alpha' },
+          { id: 2, name: 'Defect Tracker Pro Client', project_name: 'Defect Tracker Pro' },
+          { id: 3, name: 'Mobile Gateway API Wrapper', project_name: 'Mobile Gateway API' }
+        ]);
+      }
+
+      setLoading(true);
+      try {
+        const params = selectedProject ? { project_id: selectedProject } : {};
+        const res = await defectAPI.getDashboardStats(params);
         setStats(res.data.data);
       } catch {
         // Fallback mockup stats for high-fidelity offline preview
         setStats({
           totalProjects: 6,
           totalUsers: 14,
-          totalDefects: 38,
-          openDefects: 12,
-          resolvedDefects: 20,
-          criticalDefects: 6,
+          totalDefects: selectedProject ? 12 : 38,
+          openDefects: selectedProject ? 3 : 12,
+          resolvedDefects: selectedProject ? 7 : 20,
+          criticalDefects: selectedProject ? 2 : 6,
           defectsBySeverity: [
-            { severity: 'Critical', count: 6, color: '#ef4444' },
-            { severity: 'High', count: 10, color: '#f97316' },
-            { severity: 'Medium', count: 14, color: '#f59e0b' },
-            { severity: 'Low', count: 8, color: '#94a3b8' }
+            { severity: 'Critical', count: selectedProject ? 2 : 6, color: '#ef4444' },
+            { severity: 'High', count: selectedProject ? 3 : 10, color: '#f97316' },
+            { severity: 'Medium', count: selectedProject ? 5 : 14, color: '#f59e0b' },
+            { severity: 'Low', count: selectedProject ? 2 : 8, color: '#94a3b8' }
           ],
           defectsByStatus: [
-            { name: 'Open', count: 5, fill: '#38bdf8' },
-            { name: 'Assigned', count: 7, fill: '#6366f1' },
-            { name: 'In Progress', count: 6, fill: '#f59e0b' },
-            { name: 'Resolved', count: 12, fill: '#10b981' },
-            { name: 'Testing', count: 4, fill: '#14b8a6' },
-            { name: 'Closed', count: 4, fill: '#64748b' }
+            { name: 'Open', count: selectedProject ? 1 : 5, fill: '#38bdf8' },
+            { name: 'Assigned', count: selectedProject ? 2 : 7, fill: '#6366f1' },
+            { name: 'In Progress', count: selectedProject ? 2 : 6, fill: '#f59e0b' },
+            { name: 'Resolved', count: selectedProject ? 4 : 12, fill: '#10b981' },
+            { name: 'Testing', count: selectedProject ? 2 : 4, fill: '#14b8a6' },
+            { name: 'Closed', count: selectedProject ? 1 : 4, fill: '#64748b' }
           ],
           monthlyTrend: [
-            { month: 'Jan', defects: 8, resolved: 5 },
-            { month: 'Feb', defects: 15, resolved: 10 },
-            { month: 'Mar', defects: 12, resolved: 14 },
-            { month: 'Apr', defects: 22, resolved: 16 },
-            { month: 'May', defects: 26, resolved: 20 },
-            { month: 'Jun', defects: 38, resolved: 28 }
+            { month: 'Jan', defects: selectedProject ? 3 : 8, resolved: selectedProject ? 1 : 5 },
+            { month: 'Feb', defects: selectedProject ? 5 : 15, resolved: selectedProject ? 3 : 10 },
+            { month: 'Mar', defects: selectedProject ? 4 : 12, resolved: selectedProject ? 4 : 14 },
+            { month: 'Apr', defects: selectedProject ? 7 : 22, resolved: selectedProject ? 5 : 16 },
+            { month: 'May', defects: selectedProject ? 8 : 26, resolved: selectedProject ? 6 : 20 },
+            { month: 'Jun', defects: selectedProject ? 12 : 38, resolved: selectedProject ? 9 : 28 }
           ],
           recentDefects: [
             { id: 1, title: 'Database pool connection timeouts under stress load', project_name: 'Project Alpha', severity: 'Critical', status: 'In Progress' },
             { id: 2, title: 'UI alignment layout breaks on iOS safari settings screen', project_name: 'Defect Tracker Pro', severity: 'Medium', status: 'Open' },
             { id: 3, title: 'Auth tokens expire prematurely before 24h limit', project_name: 'Mobile Gateway API', severity: 'High', status: 'Resolved' },
             { id: 4, title: 'PDF export contains corrupted character map tables', project_name: 'Project Alpha', severity: 'Low', status: 'Closed' }
-          ],
+          ].filter(d => !selectedProject || (selectedProject === '1' && d.project_name.includes('Alpha')) || (selectedProject === '2' && d.project_name.includes('Pro')) || (selectedProject === '3' && d.project_name.includes('Mobile'))),
           assignedToMe: [
             { id: 1, title: 'Database pool connection timeouts under stress load', severity: 'Critical', status: 'In Progress' },
             { id: 3, title: 'Auth tokens expire prematurely before 24h limit', severity: 'High', status: 'Resolved' }
@@ -94,8 +113,8 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-    fetchStats();
-  }, []);
+    loadProjectsAndStats();
+  }, [selectedProject]);
 
   if (loading) return <Layout title="Dashboard"><LoadingSpinner /></Layout>;
 
@@ -118,11 +137,23 @@ const Dashboard = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Welcome back, {user?.full_name}. Here is the quality digest of your projects.</p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {/* Project Filter */}
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="input-field text-xs py-1.5 w-48 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+            >
+              <option value="">All Projects Overview</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name || p.project_name}</option>
+              ))}
+            </select>
+
             {user?.role === 'admin' && (
               <button 
                 onClick={() => navigate('/projects')}
-                className="btn-secondary text-xs"
+                className="btn-secondary text-xs shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Create Project
               </button>
@@ -130,7 +161,7 @@ const Dashboard = () => {
             {user?.role === 'tester' && (
               <button 
                 onClick={() => navigate('/create-defect')}
-                className="btn-primary text-xs"
+                className="btn-primary text-xs shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Report Defect
               </button>
@@ -140,12 +171,42 @@ const Dashboard = () => {
 
         {/* Stats Cards Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <StatCard title="Total Projects" value={stats?.totalProjects || 0} icon={FolderKanban} color="primary" />
-          <StatCard title="Active Users" value={stats?.totalUsers || 0} icon={Users} color="purple" />
-          <StatCard title="Total Defects" value={stats?.totalDefects || 0} icon={Bug} color="primary" />
-          <StatCard title="Open Defects" value={stats?.openDefects || 0} icon={Clock} color="yellow" />
-          <StatCard title="Resolved" value={stats?.resolvedDefects || 0} icon={CheckCircle2} color="green" />
-          <StatCard title="Critical" value={stats?.criticalDefects || 0} icon={AlertTriangle} color="red" />
+          <StatCard 
+            title={user?.role === 'manager' ? 'Total Assigned Projects' : 'Total Projects'} 
+            value={stats?.totalProjects || 0} 
+            icon={FolderKanban} 
+            color="primary" 
+          />
+          <StatCard 
+            title={user?.role === 'tester' ? 'Pending Verification' : (user?.role === 'manager' ? 'Total Defects' : 'Active Users')} 
+            value={user?.role === 'tester' ? (stats?.pendingVerification || 0) : (user?.role === 'manager' ? (stats?.totalDefects || 0) : (stats?.totalUsers || 0))} 
+            icon={user?.role === 'tester' ? Clock : Users} 
+            color={user?.role === 'tester' ? 'yellow' : 'purple'} 
+          />
+          <StatCard 
+            title={user?.role === 'tester' ? 'My Reported Defects' : (user?.role === 'manager' ? 'Open Defects' : (user?.role === 'developer' ? 'My Assignments' : 'Total Defects'))} 
+            value={user?.role === 'manager' ? (stats?.openDefects || 0) : (stats?.totalDefects || 0)} 
+            icon={Bug} 
+            color="primary" 
+          />
+          <StatCard 
+            title={user?.role === 'tester' ? 'Open Defects' : (user?.role === 'manager' ? 'In Progress Defects' : (user?.role === 'admin' ? 'Open Defects' : 'My Open'))} 
+            value={user?.role === 'tester' ? (stats?.openDefects || 0) : (user?.role === 'manager' ? (stats?.inProgressDefects || 0) : (stats?.openDefects || 0))} 
+            icon={user?.role === 'tester' ? AlertTriangle : Clock} 
+            color={user?.role === 'tester' ? 'red' : 'yellow'} 
+          />
+          <StatCard 
+            title={user?.role === 'tester' ? 'Closed Defects' : (user?.role === 'manager' ? 'Critical Defects' : (user?.role === 'admin' ? 'Resolved' : 'My Resolved'))} 
+            value={user?.role === 'tester' ? (stats?.closedDefects || 0) : (user?.role === 'manager' ? (stats?.criticalDefects || 0) : (stats?.resolvedDefects || 0))} 
+            icon={CheckCircle2} 
+            color="green" 
+          />
+          <StatCard 
+            title={user?.role === 'tester' ? 'Critical Defects' : (user?.role === 'manager' ? 'Resolved Defects' : (user?.role === 'admin' ? 'Critical' : 'My Critical'))} 
+            value={user?.role === 'tester' ? (stats?.criticalDefects || 0) : (user?.role === 'manager' ? (stats?.resolvedDefects || 0) : (stats?.criticalDefects || 0))} 
+            icon={AlertTriangle} 
+            color="red" 
+          />
         </div>
 
         {/* Charts Grid */}
@@ -274,32 +335,34 @@ const Dashboard = () => {
           {/* Quick Actions & Assigned To Me */}
           <div className="flex flex-col gap-6">
             
-            {/* Assigned to Me */}
-            <div className="card flex-1">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-brand-600" />
-                Assigned to Me
-              </h3>
-              <div className="space-y-3">
-                {!stats?.assignedToMe || stats.assignedToMe.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-6">You have no pending assignments</p>
-                ) : (
-                  stats.assignedToMe.map(item => (
-                    <div 
-                      key={item.id} 
-                      onClick={() => navigate(`/defects/${item.id}`)}
-                      className="p-3 bg-slate-50 dark:bg-slate-850/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all border border-slate-200/50 dark:border-slate-800/80"
-                    >
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{item.title}</p>
-                      <div className="flex gap-2 mt-2">
-                        <SeverityBadge severity={item.severity} />
-                        <StatusBadge status={item.status} />
+            {/* Assigned to Me (Hide for Tester) */}
+            {user?.role !== 'tester' && (
+              <div className="card flex-1">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-brand-600" />
+                  Assigned to Me
+                </h3>
+                <div className="space-y-3">
+                  {!stats?.assignedToMe || stats.assignedToMe.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-6">You have no pending assignments</p>
+                  ) : (
+                    stats.assignedToMe.map(item => (
+                      <div 
+                        key={item.id} 
+                        onClick={() => navigate(`/defects/${item.id}`)}
+                        className="p-3 bg-slate-50 dark:bg-slate-850/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-all border border-slate-200/50 dark:border-slate-800/80"
+                      >
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{item.title}</p>
+                        <div className="flex gap-2 mt-2">
+                          <SeverityBadge severity={item.severity} />
+                          <StatusBadge status={item.status} />
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quick Actions */}
             <div className="card">

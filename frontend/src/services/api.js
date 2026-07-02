@@ -55,7 +55,7 @@ export const defectAPI = {
   create: (data) => api.post('/defects', data),
   update: (id, data) => api.put(`/defects/${id}`, data),
   delete: (id) => api.delete(`/defects/${id}`),
-  getDashboardStats: () => api.get('/defects/dashboard/stats'),
+  getDashboardStats: (params) => api.get('/defects/dashboard/stats', { params }),
   getReports: () => api.get('/defects/reports'),
 };
 

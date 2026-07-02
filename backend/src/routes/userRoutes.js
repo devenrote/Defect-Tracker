@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorize('admin'), userController.getAllUsers);
+router.get('/', userController.getAllUsers);
 router.get('/:id', userController.getUserById);
 router.put('/:id', updateUserValidation, validate, userController.updateUser);
 

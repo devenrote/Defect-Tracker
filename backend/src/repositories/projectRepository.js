@@ -2,20 +2,29 @@ const pool = require('../config/database');
 
 class ProjectRepository {
   async findAll(filters = {}) {
-    let query = 'SELECT * FROM projects WHERE 1=1';
+    let query = 'SELECT p.* FROM projects p WHERE 1=1';
     const params = [];
 
+    if (filters.user_id && filters.role !== 'admin') {
+      query = `
+        SELECT p.* FROM projects p
+        INNER JOIN project_members pm ON p.id = pm.project_id
+        WHERE pm.user_id = ?
+      `;
+      params.push(filters.user_id);
+    }
+
     if (filters.status) {
-      query += ' AND status = ?';
+      query += ' AND p.status = ?';
       params.push(filters.status);
     }
 
     if (filters.search) {
-      query += ' AND (project_name LIKE ? OR description LIKE ?)';
+      query += ' AND (p.project_name LIKE ? OR p.description LIKE ?)';
       params.push(`%${filters.search}%`, `%${filters.search}%`);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY p.created_at DESC';
 
     const [rows] = await pool.execute(query, params);
     return rows;
@@ -86,6 +95,14 @@ class ProjectRepository {
       [id]
     );
     return stats[0];
+  }
+
+  async isMember(projectId, userId) {
+    const [rows] = await pool.execute(
+      'SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?',
+      [projectId, userId]
+    );
+    return rows.length > 0;
   }
 }
 

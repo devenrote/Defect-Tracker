@@ -6,9 +6,14 @@ class ProjectService {
     return projectRepository.findAll(filters);
   }
 
-  async getProjectById(id) {
+  async getProjectById(id, user) {
     const project = await projectRepository.findById(id);
     if (!project) throw new AppError('Project not found', 404);
+    
+    if (user && user.role !== 'admin') {
+      const isMember = await projectRepository.isMember(id, user.id);
+      if (!isMember) throw new AppError('Access denied. You are not assigned to this project.', 403);
+    }
     return project;
   }
 
@@ -28,9 +33,8 @@ class ProjectService {
     return projectRepository.delete(id);
   }
 
-  async getProjectStatistics(id) {
-    const project = await projectRepository.findById(id);
-    if (!project) throw new AppError('Project not found', 404);
+  async getProjectStatistics(id, user) {
+    const project = await this.getProjectById(id, user);
     const stats = await projectRepository.getStatistics(id);
     return { project, statistics: stats };
   }

@@ -3,7 +3,12 @@ const defectService = require('../services/defectService');
 class DefectController {
   async getAllDefects(req, res, next) {
     try {
-      const defects = await defectService.getAllDefects(req.query);
+      const filters = {
+        ...req.query,
+        user_id: req.user.id,
+        role: req.user.role
+      };
+      const defects = await defectService.getAllDefects(filters);
       res.json({ success: true, data: defects });
     } catch (error) {
       next(error);
@@ -30,7 +35,7 @@ class DefectController {
 
   async updateDefect(req, res, next) {
     try {
-      const defect = await defectService.updateDefect(req.params.id, req.body, req.user);
+      const defect = await defectService.updateDefect(req.params.id, req.body, req.file, req.user);
       res.json({ success: true, data: defect });
     } catch (error) {
       next(error);
@@ -48,7 +53,7 @@ class DefectController {
 
   async getDashboardStats(req, res, next) {
     try {
-      const stats = await defectService.getDashboardStats(req.user.role, req.user.id);
+      const stats = await defectService.getDashboardStats(req.user.role, req.user.id, req.query);
       res.json({ success: true, data: stats });
     } catch (error) {
       next(error);
@@ -57,7 +62,7 @@ class DefectController {
 
   async getReports(req, res, next) {
     try {
-      const reports = await defectService.getReports();
+      const reports = await defectService.getReports(req.user);
       res.json({ success: true, data: reports });
     } catch (error) {
       next(error);

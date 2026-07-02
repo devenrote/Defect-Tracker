@@ -14,6 +14,9 @@ import Defects from './pages/Defects';
 import Reports from './pages/Reports';
 import CreateDefect from './pages/CreateDefect';
 import MyDefects from './pages/MyDefects';
+import UpdateDefect from './pages/UpdateDefect';
+import VerificationQueue from './pages/VerificationQueue';
+import VerifyDefect from './pages/VerifyDefect';
 import AssignedDefects from './pages/AssignedDefects';
 import Profile from './pages/Profile';
 import DefectDetails from './pages/DefectDetails';
@@ -33,7 +36,7 @@ const App = () => {
       {/* Pages accessible by all logged-in roles */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute roles={['admin', 'developer', 'tester']}><Settings /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
       <Route path="/defects/:id" element={<ProtectedRoute><DefectDetails /></ProtectedRoute>} />
 
@@ -41,14 +44,17 @@ const App = () => {
       <Route path="/projects" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Projects /></ProtectedRoute>} />
       <Route path="/projects/:id" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><ProjectDetails /></ProtectedRoute>} />
       
-      {/* Admin-only views */}
-      <Route path="/users" element={<ProtectedRoute roles={['admin']}><Users /></ProtectedRoute>} />
+      {/* Admin and Project Manager Team View */}
+      <Route path="/users" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Users /></ProtectedRoute>} />
       <Route path="/defects" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Defects /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Reports /></ProtectedRoute>} />
 
       {/* Tester-only views */}
       <Route path="/create-defect" element={<ProtectedRoute roles={['tester']}><CreateDefect /></ProtectedRoute>} />
       <Route path="/my-defects" element={<ProtectedRoute roles={['tester']}><MyDefects /></ProtectedRoute>} />
+      <Route path="/update-defect" element={<ProtectedRoute roles={['tester']}><UpdateDefect /></ProtectedRoute>} />
+      <Route path="/verification-queue" element={<ProtectedRoute roles={['tester']}><VerificationQueue /></ProtectedRoute>} />
+      <Route path="/verify-defect/:id" element={<ProtectedRoute roles={['tester']}><VerifyDefect /></ProtectedRoute>} />
 
       {/* Developer-only views */}
       <Route path="/assigned-defects" element={<ProtectedRoute roles={['developer']}><AssignedDefects /></ProtectedRoute>} />
