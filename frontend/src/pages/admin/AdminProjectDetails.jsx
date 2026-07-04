@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '../components/Layout';
-import { projectAPI, userAPI } from '../services/api';
+import Layout from '../../components/Layout';
+import { projectAPI, userAPI } from '../../services/api';
 import { 
   Users, 
   Calendar, 
@@ -15,11 +15,13 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import StatCard from '../components/StatCard';
-import StatusBadge from '../components/StatusBadge';
+import StatCard from '../../components/StatCard';
+import StatusBadge from '../../components/StatusBadge';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
-const ProjectDetails = () => {
+const AdminProjectDetails = () => {
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
@@ -39,15 +41,29 @@ const ProjectDetails = () => {
 
   const fetchProjectData = async () => {
     try {
-      const [projRes, usersRes] = await Promise.all([
+      const [projRes, statsRes, usersRes] = await Promise.all([
         projectAPI.getById(id),
+        projectAPI.getStatistics(id),
         userAPI.getAll(),
       ]);
       const proj = projRes.data.data;
-      setProject(proj);
-      setProjectName(proj.name);
-      setProjectDesc(proj.description || '');
-      setProjectStatus(proj.status || 'active');
+      const stats = statsRes.data.data.statistics || { total_defects: 0, open_defects: 0, resolved_defects: 0, critical_defects: 0 };
+      
+      const combinedProjectObj = {
+        ...proj,
+        name: proj.project_name || proj.name || '',
+        stats: {
+          totalDefects: Number(stats.total_defects || 0),
+          openDefects: Number(stats.open_defects || 0),
+          resolvedDefects: Number(stats.resolved_defects || 0),
+          criticalDefects: Number(stats.critical_defects || 0)
+        }
+      };
+
+      setProject(combinedProjectObj);
+      setProjectName(combinedProjectObj.name);
+      setProjectDesc(combinedProjectObj.description || '');
+      setProjectStatus(combinedProjectObj.status || 'active');
 
       // Populate mock or real members
       setMembers(proj.members || [
@@ -163,8 +179,8 @@ const ProjectDetails = () => {
             { id: 'overview', label: 'Overview', icon: BarChart3 },
             { id: 'members', label: 'Members', icon: Users },
             { id: 'timeline', label: 'Timeline', icon: Calendar },
-            { id: 'settings', label: 'Settings', icon: SettingsIcon },
-          ].map((tab) => {
+            user.role !== 'developer' && { id: 'settings', label: 'Settings', icon: SettingsIcon },
+          ].filter(Boolean).map((tab) => {
             const Icon = tab.icon;
             return (
               <button
@@ -213,9 +229,9 @@ const ProjectDetails = () => {
                     </div>
                   </div>
                   <div className="space-y-2 flex-1">
-                    <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">
-                      Project <span className="font-bold text-slate-900 dark:text-white">Alpha Integration</span> is in standard healthy conditions. 
-                      A resolution rate of <span className="font-bold text-emerald-600">60%</span> has been registered across 24 logs.
+                    <p className="text-sm text-slate-700 dark:text-slate-350 font-medium">
+                      Project <span className="font-bold text-slate-900 dark:text-white">{project?.name}</span> is in standard conditions. 
+                      A resolution rate of <span className="font-bold text-emerald-600">{Math.round(((project?.stats?.resolvedDefects || 0) / (project?.stats?.totalDefects || 1)) * 100)}%</span> has been registered across {project?.stats?.totalDefects || 0} defects.
                     </p>
                     <div className="flex gap-4 pt-2">
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -238,7 +254,7 @@ const ProjectDetails = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Members List */}
-              <div className="card lg:col-span-2 space-y-4">
+              <div className={`card space-y-4 ${user.role === 'developer' ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <h3 className="text-sm font-bold text-slate-800 dark:text-white">Assigned Project Members</h3>
                   <span className="text-xs bg-slate-100 dark:bg-slate-850 px-2 py-0.5 rounded-full font-bold text-slate-500">{members.length} Members</span>
@@ -260,12 +276,14 @@ const ProjectDetails = () => {
                         <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 dark:text-slate-300 capitalize">
                           {member.role?.replace('_', ' ')}
                         </span>
-                        <button 
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {user.role !== 'developer' && (
+                          <button 
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -273,40 +291,42 @@ const ProjectDetails = () => {
               </div>
 
               {/* Add New Member Widget */}
-              <div className="card h-fit space-y-4">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">Add Team Member</h3>
-                <form onSubmit={handleAddMember} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5 tracking-wide">Select User</label>
-                    <select
-                      value={selectedUserToAdd}
-                      onChange={(e) => setSelectedUserToAdd(e.target.value)}
-                      className="input-field text-sm"
-                      required
-                    >
-                      <option value="">-- Choose User --</option>
-                      {users.map(u => (
-                        <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5 tracking-wide">Project Role</label>
-                    <select
-                      value={selectedRoleForNewMember}
-                      onChange={(e) => setSelectedRoleForNewMember(e.target.value)}
-                      className="input-field text-sm"
-                    >
-                      <option value="developer">Developer</option>
-                      <option value="tester">Tester</option>
-                      <option value="manager">Project Manager</option>
-                    </select>
-                  </div>
-                  <button type="submit" className="btn-primary w-full">
-                    <Plus className="w-4 h-4" /> Add to Project
-                  </button>
-                </form>
-              </div>
+              {user.role !== 'developer' && (
+                <div className="card h-fit space-y-4">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">Add Team Member</h3>
+                  <form onSubmit={handleAddMember} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5 tracking-wide">Select User</label>
+                      <select
+                        value={selectedUserToAdd}
+                        onChange={(e) => setSelectedUserToAdd(e.target.value)}
+                        className="input-field text-sm"
+                        required
+                      >
+                        <option value="">-- Choose User --</option>
+                        {users.map(u => (
+                          <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5 tracking-wide">Project Role</label>
+                      <select
+                        value={selectedRoleForNewMember}
+                        onChange={(e) => setSelectedRoleForNewMember(e.target.value)}
+                        className="input-field text-sm"
+                      >
+                        <option value="developer">Developer</option>
+                        <option value="tester">Tester</option>
+                        <option value="manager">Project Manager</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="btn-primary w-full">
+                      <Plus className="w-4 h-4" /> Add to Project
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           )}
 
@@ -403,4 +423,4 @@ const ProjectDetails = () => {
   );
 };
 
-export default ProjectDetails;
+export default AdminProjectDetails;

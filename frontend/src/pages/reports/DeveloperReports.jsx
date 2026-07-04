@@ -15,12 +15,12 @@ import {
   Line 
 } from 'recharts';
 import toast from 'react-hot-toast';
-import Layout from '../components/Layout';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { defectAPI } from '../services/api';
+import Layout from '../../components/Layout';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { defectAPI } from '../../services/api';
 import { FileDown, Calendar, BarChart3, TrendingUp, Users, AlertCircle } from 'lucide-react';
 
-const Reports = () => {
+const DeveloperReports = () => {
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedReportType, setSelectedReportType] = useState('project');
@@ -291,4 +291,4 @@ const Reports = () => {
   );
 };
 
-export default Reports;
+export default DeveloperReports;

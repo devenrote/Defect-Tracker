@@ -16,5 +16,6 @@ router.get('/:id', defectController.getDefectById);
 router.post('/', upload.single('screenshot'), defectValidation, validate, defectController.createDefect);
 router.put('/:id', upload.single('screenshot'), defectController.updateDefect);
 router.delete('/:id', authorize('admin'), defectController.deleteDefect);
+router.post('/:id/attachments', upload.single('file'), defectController.uploadAttachment);
 
 module.exports = router;

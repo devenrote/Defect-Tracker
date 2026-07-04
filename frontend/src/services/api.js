@@ -37,7 +37,14 @@ export const authAPI = {
 export const userAPI = {
   getAll: (params) => api.get('/users', { params }),
   getById: (id) => api.get(`/users/${id}`),
-  update: (id, data) => api.put(`/users/${id}`, data),
+  update: (id, data) => {
+    if (data instanceof FormData) {
+      return api.put(`/users/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/users/${id}`, data);
+  },
 };
 
 export const projectAPI = {
@@ -52,11 +59,28 @@ export const projectAPI = {
 export const defectAPI = {
   getAll: (params) => api.get('/defects', { params }),
   getById: (id) => api.get(`/defects/${id}`),
-  create: (data) => api.post('/defects', data),
-  update: (id, data) => api.put(`/defects/${id}`, data),
+  create: (data) => {
+    if (data instanceof FormData) {
+      return api.post('/defects', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.post('/defects', data);
+  },
+  update: (id, data) => {
+    if (data instanceof FormData) {
+      return api.put(`/defects/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.put(`/defects/${id}`, data);
+  },
   delete: (id) => api.delete(`/defects/${id}`),
   getDashboardStats: (params) => api.get('/defects/dashboard/stats', { params }),
   getReports: () => api.get('/defects/reports'),
+  uploadAttachment: (id, data) => api.post(`/defects/${id}/attachments`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const commentAPI = {
@@ -71,6 +95,10 @@ export const notificationAPI = {
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),
+};
+
+export const activityAPI = {
+  getActivities: (params) => api.get('/activities', { params }),
 };
 
 export default api;

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import Layout from '../components/Layout';
-import DataTable from '../components/DataTable';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { userAPI } from '../services/api';
-import api from '../services/api';
+import Layout from '../../components/Layout';
+import DataTable from '../../components/DataTable';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { userAPI } from '../../services/api';
+import api from '../../services/api';
 import { UserPlus, UserCheck, Shield, Key, Save } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
-const Users = () => {
+const DeveloperTeamMembers = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -219,4 +219,4 @@ const Users = () => {
   );
 };
 
-export default Users;
+export default DeveloperTeamMembers;

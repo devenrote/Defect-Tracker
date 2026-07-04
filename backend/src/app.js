@@ -9,6 +9,7 @@ const projectRoutes = require('./routes/projectRoutes');
 const defectRoutes = require('./routes/defectRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const activityRoutes = require('./routes/activityRoutes');
 
 const path = require('path');
 
@@ -37,6 +38,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/defects', defectRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/activities', activityRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

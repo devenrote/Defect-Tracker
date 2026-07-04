@@ -1,4 +1,4 @@
-const StatCard = ({ title, value, icon: Icon, color = 'primary' }) => {
+const StatCard = ({ title, value, icon: Icon, color = 'primary', onClick }) => {
   const colorClasses = {
     primary: 'bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400',
     green: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400',
@@ -8,7 +8,10 @@ const StatCard = ({ title, value, icon: Icon, color = 'primary' }) => {
   };
 
   return (
-    <div className="card hover:border-slate-300 dark:hover:border-slate-700 transition-all hover:translate-y-[-2px] duration-300">
+    <div 
+      onClick={onClick}
+      className={`card hover:border-slate-300 dark:hover:border-slate-700 transition-all hover:translate-y-[-2px] duration-300 ${onClick ? 'cursor-pointer' : ''}`}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide uppercase">{title}</p>

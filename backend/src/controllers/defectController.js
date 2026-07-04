@@ -68,6 +68,18 @@ class DefectController {
       next(error);
     }
   }
+
+  async uploadAttachment(req, res, next) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file provided' });
+      }
+      const attachment = await defectService.uploadAttachment(req.params.id, req.file, req.user);
+      res.json({ success: true, data: attachment });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new DefectController();

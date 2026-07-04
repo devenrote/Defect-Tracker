@@ -6,12 +6,12 @@ import LoadingSpinner from './components/LoadingSpinner';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Projects from './pages/Projects';
-import ProjectDetails from './pages/ProjectDetails';
-import Users from './pages/Users';
+import Dashboard from './pages/DashboardContainer';
+import Projects from './pages/ProjectsContainer';
+import ProjectDetails from './pages/ProjectDetailsContainer';
+import Users from './pages/UsersContainer';
 import Defects from './pages/Defects';
-import Reports from './pages/Reports';
+import Reports from './pages/reports/ReportsContainer';
 import CreateDefect from './pages/CreateDefect';
 import MyDefects from './pages/MyDefects';
 import UpdateDefect from './pages/UpdateDefect';
@@ -19,9 +19,10 @@ import VerificationQueue from './pages/VerificationQueue';
 import VerifyDefect from './pages/VerifyDefect';
 import AssignedDefects from './pages/AssignedDefects';
 import Profile from './pages/Profile';
-import DefectDetails from './pages/DefectDetails';
+import DefectDetails from './pages/DefectDetailsContainer';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
+import ActivityHistory from './pages/ActivityHistory';
 
 const App = () => {
   const { loading, isAuthenticated } = useAuth();
@@ -36,13 +37,13 @@ const App = () => {
       {/* Pages accessible by all logged-in roles */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute roles={['admin', 'developer', 'tester']}><Settings /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Settings /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
       <Route path="/defects/:id" element={<ProtectedRoute><DefectDetails /></ProtectedRoute>} />
 
-      {/* Admin and Project Manager views */}
-      <Route path="/projects" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Projects /></ProtectedRoute>} />
-      <Route path="/projects/:id" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><ProjectDetails /></ProtectedRoute>} />
+      {/* Projects views - Developers can view projects they are assigned to */}
+      <Route path="/projects" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager', 'developer']}><Projects /></ProtectedRoute>} />
+      <Route path="/projects/:id" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager', 'developer']}><ProjectDetails /></ProtectedRoute>} />
       
       {/* Admin and Project Manager Team View */}
       <Route path="/users" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Users /></ProtectedRoute>} />
@@ -58,6 +59,7 @@ const App = () => {
 
       {/* Developer-only views */}
       <Route path="/assigned-defects" element={<ProtectedRoute roles={['developer']}><AssignedDefects /></ProtectedRoute>} />
+      <Route path="/activity-history" element={<ProtectedRoute roles={['developer']}><ActivityHistory /></ProtectedRoute>} />
 
       <Route path="/" element={<Home />} />
       <Route path="*" element={<Navigate to="/dashboard" />} />

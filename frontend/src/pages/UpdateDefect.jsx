@@ -35,6 +35,7 @@ const UpdateDefect = () => {
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [selectedDefect, setSelectedDefect] = useState(null);
   const [form, setForm] = useState({
@@ -47,6 +48,11 @@ const UpdateDefect = () => {
   });
   const [screenshot, setScreenshot] = useState(null);
   const [screenshotPreview, setScreenshotPreview] = useState(null);
+
+  // Reset page when search or status filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -156,6 +162,12 @@ const UpdateDefect = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const ITEMS_PER_PAGE = 4;
+  const totalPages = Math.max(1, Math.ceil(filteredDefects.length / ITEMS_PER_PAGE));
+  const activePage = Math.min(currentPage, totalPages);
+  const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
+  const paginatedDefects = filteredDefects.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
   return (
     <Layout title="Update Defect">
       <div className="flex flex-col gap-6 h-[calc(100vh-140px)]">
@@ -214,7 +226,7 @@ const UpdateDefect = () => {
                     <p className="text-[10px] text-slate-400 mt-1 max-w-[200px]">Adjust filters or try typing a different search term.</p>
                   </div>
                 ) : (
-                  filteredDefects.map((defect) => {
+                  paginatedDefects.map((defect) => {
                     const isSelected = selectedDefect?.id === defect.id;
                     return (
                       <div
@@ -246,6 +258,31 @@ const UpdateDefect = () => {
                   })
                 )}
               </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
+                  <button
+                    type="button"
+                    disabled={activePage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    className="px-3 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-brand-650 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:text-slate-600 disabled:hover:bg-slate-50 dark:disabled:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                    Page {activePage} of {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={activePage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    className="px-3 py-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:text-brand-650 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:hover:text-slate-600 disabled:hover:bg-slate-50 dark:disabled:hover:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
 
             </div>
 

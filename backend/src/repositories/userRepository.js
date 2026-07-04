@@ -8,14 +8,14 @@ class UserRepository {
 
   async findById(id) {
     const [rows] = await pool.execute(
-      'SELECT id, full_name, email, role, created_at FROM users WHERE id = ?',
+      'SELECT id, full_name, email, role, avatar, created_at FROM users WHERE id = ?',
       [id]
     );
     return rows[0];
   }
 
   async findAll(filters = {}) {
-    let query = 'SELECT id, full_name, email, role, created_at FROM users WHERE 1=1';
+    let query = 'SELECT id, full_name, email, role, avatar, created_at FROM users WHERE 1=1';
     const params = [];
 
     if (filters.role) {
@@ -62,6 +62,10 @@ class UserRepository {
     if (userData.role) {
       fields.push('role = ?');
       params.push(userData.role);
+    }
+    if (userData.avatar) {
+      fields.push('avatar = ?');
+      params.push(userData.avatar);
     }
 
     if (fields.length === 0) return this.findById(id);

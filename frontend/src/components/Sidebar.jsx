@@ -64,7 +64,9 @@ const Sidebar = () => {
     if (role === 'developer') {
       return [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/projects', label: 'My Projects', icon: FolderKanban },
         { to: '/assigned-defects', label: 'Assigned Defects', icon: Bug },
+        { to: '/activity-history', label: 'Activity History', icon: Activity },
       ];
     }
 

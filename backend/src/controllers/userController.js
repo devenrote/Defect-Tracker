@@ -21,7 +21,7 @@ class UserController {
 
   async updateUser(req, res, next) {
     try {
-      const user = await userService.updateUser(req.params.id, req.body, req.user);
+      const user = await userService.updateUser(req.params.id, req.body, req.user, req.file);
       res.json({ success: true, data: user });
     } catch (error) {
       next(error);
