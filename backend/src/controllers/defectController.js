@@ -62,7 +62,7 @@ class DefectController {
 
   async getReports(req, res, next) {
     try {
-      const reports = await defectService.getReports(req.user);
+      const reports = await defectService.getReports(req.user, req.query);
       res.json({ success: true, data: reports });
     } catch (error) {
       next(error);

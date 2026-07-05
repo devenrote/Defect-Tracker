@@ -10,28 +10,57 @@ const DataTable = ({
   onSearch,
   pagination = false,
   pageSize = 10,
+  serverSide = false,
+  totalCount = 0,
+  currentPage: serverCurrentPage,
+  onPageChange,
+  onSearchChange,
+  searchQuery = ''
 }) => {
-  const [search, setSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [localSearch, setLocalSearch] = useState('');
+  const [localCurrentPage, setLocalCurrentPage] = useState(1);
+
+  const activeSearch = serverSide ? searchQuery : localSearch;
+  const activeCurrentPage = serverSide ? serverCurrentPage : localCurrentPage;
 
   const handleSearch = (value) => {
-    setSearch(value);
-    setCurrentPage(1);
-    if (onSearch) onSearch(value);
+    if (serverSide) {
+      if (onSearchChange) onSearchChange(value);
+      if (onPageChange) onPageChange(1);
+    } else {
+      setLocalSearch(value);
+      setLocalCurrentPage(1);
+      if (onSearch) onSearch(value);
+    }
   };
 
-  const filteredData = onSearch
+  const handlePageChange = (page) => {
+    if (serverSide) {
+      if (onPageChange) onPageChange(page);
+    } else {
+      setLocalCurrentPage(page);
+    }
+  };
+
+  const filteredData = serverSide
+    ? data
+    : onSearch
     ? data
     : data.filter((row) =>
         columns.some((col) => {
           const val = col.accessor ? row[col.accessor] : '';
-          return String(val).toLowerCase().includes(search.toLowerCase());
+          return String(val).toLowerCase().includes(localSearch.toLowerCase());
         })
       );
 
-  const totalPages = Math.ceil(filteredData.length / pageSize);
-  const paginatedData = pagination
-    ? filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const totalPages = serverSide
+    ? Math.ceil(totalCount / pageSize)
+    : Math.ceil(filteredData.length / pageSize);
+
+  const paginatedData = serverSide
+    ? data
+    : pagination
+    ? filteredData.slice((activeCurrentPage - 1) * pageSize, activeCurrentPage * pageSize)
     : filteredData;
 
   return (
@@ -42,7 +71,7 @@ const DataTable = ({
           <input
             type="text"
             placeholder={searchPlaceholder}
-            value={search}
+            value={activeSearch}
             onChange={(e) => handleSearch(e.target.value)}
             className="input-field pl-9 py-2 text-xs"
           />
@@ -91,20 +120,33 @@ const DataTable = ({
 
       {pagination && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Showing <span className="font-semibold">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-semibold">{Math.min(currentPage * pageSize, filteredData.length)}</span> of <span className="font-bold">{filteredData.length}</span> entries
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+            Showing <span className="font-bold text-slate-800 dark:text-white">{(activeCurrentPage - 1) * pageSize + 1}</span> to <span className="font-bold text-slate-800 dark:text-white">{Math.min(activeCurrentPage * pageSize, serverSide ? totalCount : filteredData.length)}</span> of <span className="font-extrabold text-brand-600 dark:text-brand-400">{serverSide ? totalCount : filteredData.length}</span> entries
           </p>
-          <div className="flex gap-2">
+          <div className="flex gap-1 items-center">
             <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              onClick={() => handlePageChange(activeCurrentPage - 1)}
+              disabled={activeCurrentPage === 1}
               className="btn-secondary text-xs px-2.5 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" /> Previous
             </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`w-7 h-7 rounded-lg border text-center flex items-center justify-center text-xs transition-all cursor-pointer ${
+                  activeCurrentPage === page
+                    ? 'bg-brand-600 border-brand-600 text-white font-extrabold'
+                    : 'border-slate-200 dark:border-slate-805 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
             <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(Math.min(totalPages, activeCurrentPage + 1))}
+              disabled={activeCurrentPage === totalPages}
               className="btn-secondary text-xs px-2.5 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               Next <ChevronRight className="w-3.5 h-3.5" />

@@ -37,7 +37,9 @@ const updateUserValidation = [
   body('full_name').optional().trim().notEmpty(),
   body('email').optional().trim().isEmail(),
   body('password').optional().isLength({ min: 6 }),
-  body('role').optional().isIn(['admin', 'tester', 'developer']),
+  body('role').optional().isIn(['admin', 'manager', 'project_manager', 'tester', 'developer']),
+  body('status').optional().isIn(['Active', 'Pending', 'Disabled']),
+  body('last_login').optional(),
 ];
 
 module.exports = {

@@ -18,21 +18,51 @@ const AdminProjects = () => {
   const [editingProject, setEditingProject] = useState(null);
   const [form, setForm] = useState({ project_name: '', description: '', status: 'active' });
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const limit = 10;
+
   // Developer project detailed statistics
   const [projectStats, setProjectStats] = useState({});
   const [devDefects, setDevDefects] = useState([]);
 
   const fetchProjects = async () => {
     try {
-      const res = await projectAPI.getAll();
-      setProjects(res.data.data);
+      const isPagingRole = user?.role === 'admin' || user?.role === 'manager';
+      const params = isPagingRole ? {
+        page: currentPage,
+        limit,
+        search: searchQuery
+      } : {};
+      
+      const res = await projectAPI.getAll(params);
+      
+      const resData = res.data.data || [];
+      const resTotal = res.data.pagination?.total || 0;
+
+      // Handle post-delete boundary cases
+      if (isPagingRole && currentPage > 1 && resData.length === 0 && resTotal > 0) {
+        const newMaxPage = Math.ceil(resTotal / limit);
+        setCurrentPage(newMaxPage);
+        return;
+      }
+
+      if (res.data.pagination) {
+        setProjects(resData);
+        setTotalCount(resTotal);
+      } else {
+        setProjects(resData);
+        setTotalCount(resData.length);
+      }
 
       if (user.role === 'developer') {
         const defectsRes = await defectAPI.getAll({ assigned_to: user.id });
         setDevDefects(defectsRes.data.data);
 
         const statsMap = {};
-        for (const proj of res.data.data) {
+        for (const proj of resData) {
           try {
             const statsRes = await projectAPI.getStatistics(proj.id);
             statsMap[proj.id] = statsRes.data.data.statistics;
@@ -66,7 +96,9 @@ const AdminProjects = () => {
     }
   };
 
-  useEffect(() => { fetchProjects(); }, []);
+  useEffect(() => {
+    fetchProjects();
+  }, [currentPage, searchQuery]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -246,6 +278,12 @@ const AdminProjects = () => {
                     searchPlaceholder="Search projects..."
                     pagination 
                     onRowClick={(row) => navigate(`/projects/${row.id}`)}
+                    serverSide={true}
+                    totalCount={totalCount}
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                    onSearchChange={setSearchQuery}
+                    searchQuery={searchQuery}
                   />
                 </div>
               )}

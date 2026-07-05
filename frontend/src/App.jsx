@@ -6,7 +6,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Dashboard from './pages/DashboardContainer';
+import Dashboard from './pages/dashboard/DashboardContainer';
 import Projects from './pages/ProjectsContainer';
 import ProjectDetails from './pages/ProjectDetailsContainer';
 import Users from './pages/UsersContainer';
@@ -21,7 +21,7 @@ import AssignedDefects from './pages/AssignedDefects';
 import Profile from './pages/Profile';
 import DefectDetails from './pages/DefectDetailsContainer';
 import Settings from './pages/Settings';
-import Notifications from './pages/Notifications';
+import Notifications from './pages/notifications/NotificationContainer';
 import ActivityHistory from './pages/ActivityHistory';
 
 const App = () => {
@@ -42,8 +42,8 @@ const App = () => {
       <Route path="/defects/:id" element={<ProtectedRoute><DefectDetails /></ProtectedRoute>} />
 
       {/* Projects views - Developers can view projects they are assigned to */}
-      <Route path="/projects" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager', 'developer']}><Projects /></ProtectedRoute>} />
-      <Route path="/projects/:id" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager', 'developer']}><ProjectDetails /></ProtectedRoute>} />
+      <Route path="/projects" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager', 'developer', 'tester']}><Projects /></ProtectedRoute>} />
+      <Route path="/projects/:id" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager', 'developer', 'tester']}><ProjectDetails /></ProtectedRoute>} />
       
       {/* Admin and Project Manager Team View */}
       <Route path="/users" element={<ProtectedRoute roles={['admin', 'manager', 'project_manager']}><Users /></ProtectedRoute>} />

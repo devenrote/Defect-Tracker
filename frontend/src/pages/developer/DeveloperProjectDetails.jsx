@@ -41,10 +41,11 @@ const DeveloperProjectDetails = () => {
 
   const fetchProjectData = async () => {
     try {
-      const [projRes, statsRes, usersRes] = await Promise.all([
+      const [projRes, statsRes, usersRes, membersRes] = await Promise.all([
         projectAPI.getById(id),
         projectAPI.getStatistics(id),
         userAPI.getAll(),
+        projectAPI.getMembers(id),
       ]);
       const proj = projRes.data.data;
       const stats = statsRes.data.data.statistics || { total_defects: 0, open_defects: 0, resolved_defects: 0, critical_defects: 0 };
@@ -66,11 +67,7 @@ const DeveloperProjectDetails = () => {
       setProjectStatus(combinedProjectObj.status || 'active');
 
       // Populate mock or real members
-      setMembers(proj.members || [
-        { id: 1, full_name: 'Sarah Manager', email: 'sarah@example.com', role: 'manager' },
-        { id: 2, full_name: 'John Developer', email: 'john@example.com', role: 'developer' },
-        { id: 3, full_name: 'Dave Tester', email: 'dave@example.com', role: 'tester' }
-      ]);
+      setMembers(membersRes.data.data || []);
     } catch {
       // Mock project fallback if backend API offline
       const mockProject = {
@@ -114,24 +111,30 @@ const DeveloperProjectDetails = () => {
     fetchProjectData();
   }, [id]);
 
-  const handleAddMember = (e) => {
+  const handleAddMember = async (e) => {
     e.preventDefault();
     if (!selectedUserToAdd) return;
-    const userObj = users.find(u => u.id === Number(selectedUserToAdd) || u.id === selectedUserToAdd);
-    if (userObj) {
-      if (members.some(m => m.id === userObj.id)) {
-        toast.error('User is already a member of this project');
-        return;
-      }
-      setMembers(prev => [...prev, { ...userObj, role: selectedRoleForNewMember }]);
-      toast.success(`${userObj.full_name} added to project`);
+    try {
+      await projectAPI.addMember(id, selectedUserToAdd, selectedRoleForNewMember);
+      toast.success('Member added successfully');
       setSelectedUserToAdd('');
+      await fetchProjectData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to add member to project');
     }
   };
 
-  const handleRemoveMember = (memberId) => {
-    setMembers(prev => prev.filter(m => m.id !== memberId));
-    toast.success('Member removed from project');
+  const handleRemoveMember = async (memberId) => {
+    if (!window.confirm('Are you sure you want to remove this member from the project?')) return;
+    try {
+      await projectAPI.removeMember(id, memberId);
+      toast.success('Member removed from project');
+      await fetchProjectData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to remove member');
+    }
   };
 
   const handleUpdateProjectSettings = (e) => {

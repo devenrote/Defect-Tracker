@@ -53,6 +53,7 @@ const Sidebar = () => {
     if (role === 'tester') {
       return [
         { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/projects', label: 'My Projects', icon: FolderKanban },
         { to: '/create-defect', label: 'Report Defect', icon: PlusCircle },
         { to: '/my-defects', label: 'My Defects', icon: Bug },
         { to: '/update-defect', label: 'Update Defect', icon: Edit },
@@ -79,7 +80,7 @@ const Sidebar = () => {
   const links = getLinks();
 
   return (
-    <aside className={`bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 min-h-screen flex flex-col transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
+    <aside className={`bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 flex flex-col shrink-0 transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-64'}`}>
       
       {/* Collapse Toggle Button */}
       <button 
@@ -135,7 +136,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Footer Settings & Profile */}
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-1">
+      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-1 mt-auto shrink-0">
         {user?.role === 'admin' && (
           <NavLink
             to="/settings"

@@ -79,12 +79,12 @@ class DefectRepository {
   }
 
   async create(defectData) {
-    const { project_id, title, description, severity, priority, status, screenshot_url, reported_by, assigned_to, issue_type, issue_key } = defectData;
+    const { project_id, title, description, severity, priority, status, screenshot_url, reported_by, assigned_to, issue_type, issue_key, module, environment, defect_category } = defectData;
     const key = issue_key || `ISSUE-${Date.now()}`;
     const [, result] = await pool.execute(
-      `INSERT INTO issues (issue_key, project_id, title, description, severity, priority, status, issue_type, screenshot_url, reporter_id, assignee_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
-      [key, project_id, title, description, severity, priority, status || 'Open', issue_type || 'Bug', screenshot_url, reported_by, assigned_to]
+      `INSERT INTO issues (issue_key, project_id, title, description, severity, priority, status, issue_type, screenshot_url, reporter_id, assignee_id, module, environment, defect_category)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+      [key, project_id, title, description, severity, priority, status || 'Open', issue_type || 'Bug', screenshot_url, reported_by, assigned_to, module || null, environment || null, defect_category || null]
     );
     return this.findById(result.rows[0].id);
   }
@@ -93,7 +93,7 @@ class DefectRepository {
     const fields = [];
     const params = [];
 
-    const allowedFields = ['project_id', 'title', 'description', 'severity', 'priority', 'status', 'issue_type', 'screenshot_url', 'due_date', 'root_cause', 'solution', 'tech_notes', 'commit_id', 'pr_link', 'files_modified', 'estimated_time', 'actual_time', 'checklist', 'status_comment', 'sprint', 'story_points', 'estimated_effort', 'assignment_notes', 'assigned_by'];
+    const allowedFields = ['project_id', 'title', 'description', 'severity', 'priority', 'status', 'issue_type', 'screenshot_url', 'due_date', 'root_cause', 'solution', 'tech_notes', 'commit_id', 'pr_link', 'files_modified', 'estimated_time', 'actual_time', 'checklist', 'status_comment', 'sprint', 'story_points', 'estimated_effort', 'assignment_notes', 'assigned_by', 'module', 'environment', 'defect_category'];
     if (defectData.assigned_to !== undefined) {
       fields.push('assignee_id = ?');
       params.push(defectData.assigned_to);
@@ -148,19 +148,23 @@ class DefectRepository {
   }
 
   async getBySeverity(filters = {}) {
-    let query = 'SELECT severity, COUNT(*) as count FROM issues WHERE 1=1';
+    let query = 'SELECT severity, CAST(COUNT(*) AS INTEGER) as count FROM issues WHERE 1=1';
     const params = [];
-    if (filters.reported_by) {
-      query += ' AND reporter_id = ?';
-      params.push(filters.reported_by);
-    }
-    if (filters.assigned_to) {
-      query += ' AND assignee_id = ?';
-      params.push(filters.assigned_to);
-    }
     if (filters.project_id) {
       query += ' AND project_id = ?';
       params.push(filters.project_id);
+    }
+    if (filters.startDate) {
+      query += ' AND created_at >= ?';
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      query += ' AND created_at <= ?';
+      params.push(filters.endDate);
+    }
+    if (filters.user_id && filters.role !== 'admin') {
+      query += ' AND project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      params.push(filters.user_id);
     }
     query += ' GROUP BY severity';
     const [rows] = await pool.execute(query, params);
@@ -168,19 +172,23 @@ class DefectRepository {
   }
 
   async getByStatus(filters = {}) {
-    let query = 'SELECT status, COUNT(*) as count FROM issues WHERE 1=1';
+    let query = 'SELECT status, CAST(COUNT(*) AS INTEGER) as count FROM issues WHERE 1=1';
     const params = [];
-    if (filters.reported_by) {
-      query += ' AND reporter_id = ?';
-      params.push(filters.reported_by);
-    }
-    if (filters.assigned_to) {
-      query += ' AND assignee_id = ?';
-      params.push(filters.assigned_to);
-    }
     if (filters.project_id) {
       query += ' AND project_id = ?';
       params.push(filters.project_id);
+    }
+    if (filters.startDate) {
+      query += ' AND created_at >= ?';
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      query += ' AND created_at <= ?';
+      params.push(filters.endDate);
+    }
+    if (filters.user_id && filters.role !== 'admin') {
+      query += ' AND project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      params.push(filters.user_id);
     }
     query += ' GROUP BY status';
     const [rows] = await pool.execute(query, params);
@@ -189,14 +197,37 @@ class DefectRepository {
 
   async getByProject(filters = {}) {
     let sql = `
-      SELECT p.project_name, COUNT(d.id) as count 
-      FROM projects p LEFT JOIN issues d ON p.id = d.project_id 
+      SELECT p.project_name, CAST(COUNT(d.id) AS INTEGER) as count 
+      FROM projects p 
+      LEFT JOIN issues d ON p.id = d.project_id 
     `;
     const params = [];
+    let whereClauses = [];
+
     if (filters.user_id && filters.role !== 'admin') {
-      sql += ' INNER JOIN project_members pm ON p.id = pm.project_id WHERE pm.user_id = ?';
+      sql += ' INNER JOIN project_members pm ON p.id = pm.project_id ';
+      whereClauses.push('pm.user_id = ?');
       params.push(filters.user_id);
     }
+
+    if (filters.project_id) {
+      whereClauses.push('p.id = ?');
+      params.push(filters.project_id);
+    }
+
+    if (filters.startDate) {
+      whereClauses.push('(d.created_at IS NULL OR d.created_at >= ?)');
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      whereClauses.push('(d.created_at IS NULL OR d.created_at <= ?)');
+      params.push(filters.endDate);
+    }
+
+    if (whereClauses.length > 0) {
+      sql += ' WHERE ' + whereClauses.join(' AND ');
+    }
+
     sql += ' GROUP BY p.id, p.project_name';
     const [rows] = await pool.execute(sql, params);
     return rows;
@@ -204,15 +235,31 @@ class DefectRepository {
 
   async getByDeveloper(filters = {}) {
     let sql = `
-      SELECT u.full_name as developer_name, COUNT(d.id) as count 
-      FROM users u LEFT JOIN issues d ON u.id = d.assignee_id 
-      WHERE u.role = 'developer'
+      SELECT u.full_name as developer_name, CAST(COUNT(d.id) AS INTEGER) as count 
+      FROM users u 
+      LEFT JOIN issues d ON u.id = d.assignee_id 
     `;
     const params = [];
+    let whereClauses = ["u.role = 'developer'"];
+
+    if (filters.project_id) {
+      whereClauses.push('(d.project_id IS NULL OR d.project_id = ?)');
+      params.push(filters.project_id);
+    }
+    if (filters.startDate) {
+      whereClauses.push('(d.created_at IS NULL OR d.created_at >= ?)');
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      whereClauses.push('(d.created_at IS NULL OR d.created_at <= ?)');
+      params.push(filters.endDate);
+    }
     if (filters.user_id && filters.role !== 'admin') {
-      sql += ' AND d.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      whereClauses.push('(d.project_id IS NULL OR d.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?))');
       params.push(filters.user_id);
     }
+
+    sql += ' WHERE ' + whereClauses.join(' AND ');
     sql += ' GROUP BY u.id, u.full_name';
     const [rows] = await pool.execute(sql, params);
     return rows;
@@ -310,6 +357,117 @@ class DefectRepository {
        WHERE a.issue_id = ? ORDER BY a.uploaded_at ASC`,
       [defectId]
     );
+    return rows;
+  }
+
+  async getDeveloperPerformance(filters = {}) {
+    let sql = `
+      SELECT 
+        u.full_name as developer_name,
+        COUNT(d.id) as assigned_defects,
+        COUNT(CASE WHEN d.status IN ('Resolved', 'Verified', 'Closed') THEN 1 END) as resolved_defects,
+        COUNT(CASE WHEN d.status NOT IN ('Resolved', 'Verified', 'Closed') THEN 1 END) as open_defects,
+        AVG(CASE WHEN d.status IN ('Resolved', 'Verified', 'Closed') THEN EXTRACT(EPOCH FROM (d.updated_at - d.created_at))/3600 END) as avg_resolution_time
+      FROM users u
+      LEFT JOIN issues d ON u.id = d.assignee_id
+    `;
+    const params = [];
+    let whereClauses = ["u.role = 'developer'"];
+
+    if (filters.project_id) {
+      whereClauses.push('d.project_id = ?');
+      params.push(filters.project_id);
+    }
+    if (filters.startDate) {
+      whereClauses.push('d.created_at >= ?');
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      whereClauses.push('d.created_at <= ?');
+      params.push(filters.endDate);
+    }
+    if (filters.user_id && filters.role !== 'admin') {
+      whereClauses.push('d.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)');
+      params.push(filters.user_id);
+    }
+
+    sql += ' WHERE ' + whereClauses.join(' AND ');
+    sql += ' GROUP BY u.id, u.full_name';
+    const [rows] = await pool.execute(sql, params);
+    
+    return rows.map(r => ({
+      developer: r.developer_name,
+      assignedDefects: parseInt(r.assigned_defects, 10),
+      resolvedDefects: parseInt(r.resolved_defects, 10),
+      openDefects: parseInt(r.open_defects, 10),
+      avgResolutionTime: r.avg_resolution_time ? Math.round(Number(r.avg_resolution_time) * 10) / 10 : 0
+    }));
+  }
+
+  async getTopCriticalDefects(filters = {}) {
+    let sql = `
+      SELECT d.id, d.title, p.project_name, u.full_name as assignee_name, d.priority, d.status, d.created_at
+      FROM issues d
+      LEFT JOIN projects p ON d.project_id = p.id
+      LEFT JOIN users u ON d.assignee_id = u.id
+      WHERE d.severity = 'Critical' AND d.status NOT IN ('Closed', 'Verified', 'Resolved')
+    `;
+    const params = [];
+    
+    if (filters.project_id) {
+      sql += ' AND d.project_id = ?';
+      params.push(filters.project_id);
+    }
+    if (filters.startDate) {
+      sql += ' AND d.created_at >= ?';
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      sql += ' AND d.created_at <= ?';
+      params.push(filters.endDate);
+    }
+    if (filters.user_id && filters.role !== 'admin') {
+      sql += ' AND d.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      params.push(filters.user_id);
+    }
+    
+    sql += ' ORDER BY d.created_at ASC LIMIT 5';
+    const [rows] = await pool.execute(sql, params);
+    return rows;
+  }
+
+  async getFilteredDefects(filters = {}) {
+    let sql = `
+      SELECT d.id, d.title, p.project_name, d.priority, d.severity, d.status, 
+             r.full_name as reporter_name, a.full_name as assignee_name, 
+             d.created_at, d.updated_at
+      FROM issues d
+      LEFT JOIN projects p ON d.project_id = p.id
+      LEFT JOIN users r ON d.reporter_id = r.id
+      LEFT JOIN users a ON d.assignee_id = a.id
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (filters.project_id) {
+      sql += ' AND d.project_id = ?';
+      params.push(filters.project_id);
+    }
+    if (filters.startDate) {
+      sql += ' AND d.created_at >= ?';
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      sql += ' AND d.created_at <= ?';
+      params.push(filters.endDate);
+    }
+    if (filters.user_id && filters.role !== 'admin') {
+      sql += ' AND d.project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
+      params.push(filters.user_id);
+    }
+    
+    sql += ' ORDER BY d.created_at DESC';
+    const [rows] = await pool.execute(sql, params);
     return rows;
   }
 }

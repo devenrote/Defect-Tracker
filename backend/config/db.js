@@ -43,6 +43,16 @@ const execute = async (text, params = []) => {
   return [result.rows, result];
 };
 
+// Startup migration to ensure settings fields exist
+pool.query(`
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS api_key VARCHAR(255);
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_settings TEXT DEFAULT '{"defectAssigned":true,"defectResolved":true,"commentAdded":true,"weeklyReport":false,"newProjectCreated":true,"projectAssigned":true,"newUserAdded":true,"criticalDefect":true,"defectClosed":true,"weeklySummary":true}';
+`).then(() => {
+  console.log('Database settings columns verified successfully.');
+}).catch(err => {
+  console.error('Error verifying database settings columns:', err);
+});
+
 module.exports = {
   query,
   execute,

@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import DeveloperProjectDetails from './developer/DeveloperProjectDetails';
+import TesterProjectDetails from './tester/TesterProjectDetails';
 import ManagerProjectDetails from './manager/ManagerProjectDetails';
 import AdminProjectDetails from './admin/AdminProjectDetails';
 
@@ -11,6 +12,8 @@ const ProjectDetailsContainer = () => {
   switch (user.role) {
     case 'developer':
       return <DeveloperProjectDetails />;
+    case 'tester':
+      return <TesterProjectDetails />;
     case 'manager':
     case 'project_manager':
       return <ManagerProjectDetails />;

@@ -146,7 +146,7 @@ const DeveloperDashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Developer Workspace</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Welcome back, {user?.full_name}. Here is the quality digest of your projects.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Welcome back, {user?.full_name}. Here is the quality digest of your projects.</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ const DeveloperDashboard = () => {
             
             {/* Assigned to Me */}
             <div className="card flex-1">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-805 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-brand-600" />
                 Assigned to Me
               </h3>
@@ -356,17 +356,17 @@ const DeveloperDashboard = () => {
 
             {/* Quick Actions */}
             <div className="card">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4">Quick Links</h3>
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white mb-4 uppercase tracking-wider">Quick Links</h3>
               <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => navigate('/projects')}
-                  className="p-3 text-center bg-slate-50 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-850/50 dark:hover:bg-brand-950/20 dark:hover:text-brand-400 rounded-xl transition-all border border-slate-100 dark:border-slate-850 text-xs font-semibold cursor-pointer"
+                  className="p-3 text-center bg-slate-50 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-850/50 dark:hover:bg-brand-950/20 dark:hover:text-brand-400 rounded-xl transition-all border border-slate-100 dark:border-slate-850 text-xs font-semibold cursor-pointer text-slate-707 dark:text-slate-350"
                 >
                   📁 Projects
                 </button>
                 <button 
                   onClick={() => navigate('/defects')}
-                  className="p-3 text-center bg-slate-50 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-855/50 dark:hover:bg-brand-950/20 dark:hover:text-brand-400 rounded-xl transition-all border border-slate-100 dark:border-slate-850 text-xs font-semibold cursor-pointer"
+                  className="p-3 text-center bg-slate-50 hover:bg-brand-50 hover:text-brand-700 dark:bg-slate-855/50 dark:hover:bg-brand-950/20 dark:hover:text-brand-400 rounded-xl transition-all border border-slate-100 dark:border-slate-850 text-xs font-semibold cursor-pointer text-slate-707 dark:text-slate-350"
                 >
                   🐛 Defects
                 </button>
@@ -381,7 +381,7 @@ const DeveloperDashboard = () => {
         {stats?.recentDefects?.length > 0 && (
           <div className="card">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-white">Recent Defects Activity</h3>
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">Recent Defects Activity</h3>
               <button 
                 onClick={() => navigate('/defects')} 
                 className="text-xs font-bold text-brand-600 dark:text-brand-400 flex items-center gap-1.5 hover:underline"
@@ -400,7 +400,7 @@ const DeveloperDashboard = () => {
                     <th className="py-2.5 px-4 font-semibold">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-850 font-medium">
                   {stats.recentDefects.map((defect) => (
                     <tr
                       key={defect.id}

@@ -43,6 +43,25 @@ class NotificationRepository {
     );
     return rows[0].count;
   }
+
+  async notifyAdminsAndManagers(type, title, message, targetId = null) {
+    try {
+      const [users] = await pool.execute(
+        "SELECT id FROM users WHERE role IN ('admin', 'manager', 'project_manager')"
+      );
+      for (const u of users) {
+        await this.create({
+          user_id: u.id,
+          type,
+          title,
+          message,
+          issue_id: targetId
+        });
+      }
+    } catch (err) {
+      console.error('Error in notifyAdminsAndManagers helper:', err);
+    }
+  }
 }
 
 module.exports = new NotificationRepository();

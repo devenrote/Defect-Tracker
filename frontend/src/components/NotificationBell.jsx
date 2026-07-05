@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { notificationAPI, defectAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import NotificationDropdown from './notifications/NotificationDropdown';
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -100,7 +101,7 @@ const NotificationBell = () => {
     let icon = '🔔';
     let iconColor = 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
     let redirectTab = 'overview';
-    let title = defect?.title || 'Unknown Defect';
+    let title = defect?.title || n.title || 'System Notification';
     let defectKey = defect?.id ? `DF-${defect.id}` : `DF-${n.issue_id || 'N/A'}`;
     let description = msg;
     let performedBy = 'System';
@@ -119,7 +120,25 @@ const NotificationBell = () => {
       performedBy = user?.full_name || 'John Tester';
     }
 
-    if (type === 'defect_resolved' || msg.toLowerCase().includes('resolved') || msg.toLowerCase().includes('ready for verification')) {
+    if (type && (type.startsWith('project_') || type.startsWith('manager_'))) {
+      badge = 'PROJECT';
+      badgeColor = 'bg-blue-50 text-blue-700 border border-blue-200/50 dark:bg-blue-955/20 dark:text-blue-400 dark:border-blue-900/30';
+      defectKey = n.issue_id ? `PRJ-${n.issue_id}` : 'PROJECT';
+      title = n.title || 'Project Workspace Alert';
+      description = msg;
+    } else if (type && (type.startsWith('user_') || type === 'role_changed')) {
+      badge = 'USER MGMT';
+      badgeColor = 'bg-indigo-50 text-indigo-705 border border-indigo-200/50 dark:bg-indigo-955/20 dark:text-indigo-400 dark:border-indigo-900/30';
+      defectKey = 'USER';
+      title = n.title || 'User Status Alert';
+      description = msg;
+    } else if (type === 'critical_defect_created' || type === 'critical_defect_reopened' || msg.includes('CRITICAL')) {
+      badge = 'CRITICAL';
+      badgeColor = 'bg-rose-50 text-rose-700 border border-rose-200/50 dark:bg-rose-955/20 dark:text-rose-400 dark:border-rose-900/30';
+      title = defect?.title || n.title || 'Critical Defect Alert';
+      defectKey = defect?.id ? `DF-${defect.id}` : `DF-${n.issue_id || 'N/A'}`;
+      description = msg;
+    } else if (type === 'defect_resolved' || msg.toLowerCase().includes('resolved') || msg.toLowerCase().includes('ready for verification')) {
       badge = 'READY FOR VERIFICATION';
       badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-200/50 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30';
       icon = 'READY FOR VERIFICATION';
@@ -209,9 +228,20 @@ const NotificationBell = () => {
       await handleMarkAsRead(n.id);
     }
     setIsOpen(false);
-    const defect = defects.find(d => d.id === n.issue_id);
-    const parsed = parseNotification(n, defect);
-    navigate(`/defects/${n.issue_id}`, { state: { activeTab: parsed.redirectTab } });
+
+    if (n.type && (n.type.startsWith('project_') || n.type.startsWith('manager_'))) {
+      if (n.issue_id) {
+        navigate(`/projects/${n.issue_id}`);
+      } else {
+        navigate('/projects');
+      }
+    } else if (n.type && (n.type.startsWith('user_') || n.type === 'role_changed')) {
+      navigate('/users');
+    } else {
+      const defect = defects.find(d => d.id === n.issue_id);
+      const parsed = parseNotification(n, defect);
+      navigate(`/defects/${n.issue_id}`, { state: { activeTab: parsed.redirectTab } });
+    }
   };
 
   return (
@@ -248,73 +278,16 @@ const NotificationBell = () => {
                   </button>
                 )}
               </div>
-              <p className="text-[10px] text-slate-450 dark:text-slate-500 font-semibold mt-1">
+              <p className="text-[10px] text-slate-455 dark:text-slate-500 font-semibold mt-1">
                 You have {unreadFilteredCount} unread notifications.
               </p>
             </div>
 
-            {/* Content List */}
-            <div className="overflow-y-auto flex-1 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[380px]">
-              {filteredNotifications.length === 0 ? (
-                <div className="py-12 px-6 text-center space-y-2">
-                  <span className="text-3xl block">🔔</span>
-                  <h4 className="text-xs font-bold text-slate-750 dark:text-slate-300">You're all caught up!</h4>
-                  <p className="text-[10px] text-slate-450 dark:text-slate-500 font-medium">No new notifications.</p>
-                </div>
-              ) : (
-                filteredNotifications.map((n) => {
-                  const defect = defects.find(d => d.id === n.issue_id);
-                  const parsed = parseNotification(n, defect);
-                  const IconComponent = getIconComponent(parsed.icon);
-
-                  return (
-                    <div
-                      key={n.id}
-                      onClick={() => handleNotificationClick(n)}
-                      className={`p-4 hover:bg-slate-50/60 dark:hover:bg-slate-850/30 cursor-pointer transition-all flex items-start gap-3 relative animate-fadeIn ${
-                        !n.is_read ? 'bg-brand-50/30 dark:bg-brand-950/10' : 'bg-white dark:bg-slate-900'
-                      }`}
-                    >
-                      {/* Left Icon */}
-                      <span className={`w-8 h-8 rounded-lg ${parsed.iconColor} flex items-center justify-center font-semibold shrink-0 mt-0.5 shadow-xs`}>
-                        <IconComponent className="w-4 h-4" />
-                      </span>
-
-                      {/* Right Details */}
-                      <div className="flex-1 min-w-0 pr-2">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wide uppercase ${parsed.badgeColor}`}>
-                            {parsed.badge}
-                          </span>
-                          <span className="text-[9px] text-slate-400 dark:text-slate-550 font-bold font-mono shrink-0">
-                            {parsed.defectKey}
-                          </span>
-                        </div>
-                        
-                        <p className="text-[10px] text-slate-455 dark:text-slate-500 font-bold mt-1 truncate" title={parsed.title}>
-                          {parsed.title}
-                        </p>
-                        
-                        <p className="text-xs text-slate-700 dark:text-slate-300 leading-normal mt-1 font-medium break-words">
-                          {parsed.description}
-                        </p>
-                        
-                        <div className="flex items-center gap-1.5 mt-2 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                          <span>{parsed.performedBy}</span>
-                          <span>•</span>
-                          <span>{getRelativeTime(n.created_at)}</span>
-                        </div>
-                      </div>
-
-                      {/* Unread dot */}
-                      {!n.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-brand-600 dark:bg-brand-500 shrink-0 mt-2"></span>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
+            {/* Content List - displays only latest 5 notifications */}
+            <NotificationDropdown 
+              notifications={filteredNotifications.slice(0, 5)} 
+              onNotificationClick={handleNotificationClick} 
+            />
 
             {/* Bottom Footer */}
             <div className="p-3 bg-slate-50 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800 shrink-0 flex justify-center">

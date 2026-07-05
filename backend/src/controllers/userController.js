@@ -3,8 +3,20 @@ const userService = require('../services/userService');
 class UserController {
   async getAllUsers(req, res, next) {
     try {
-      const users = await userService.getAllUsers(req.query);
-      res.json({ success: true, data: users });
+      const result = await userService.getAllUsers(req.query);
+      if (req.query.page && req.query.limit) {
+        res.json({
+          success: true,
+          data: result.rows,
+          pagination: {
+            page: parseInt(req.query.page, 10),
+            limit: parseInt(req.query.limit, 10),
+            total: result.totalCount
+          }
+        });
+      } else {
+        res.json({ success: true, data: result });
+      }
     } catch (error) {
       next(error);
     }
@@ -23,6 +35,15 @@ class UserController {
     try {
       const user = await userService.updateUser(req.params.id, req.body, req.user, req.file);
       res.json({ success: true, data: user });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createUser(req, res, next) {
+    try {
+      const user = await userService.createUser(req.body);
+      res.status(201).json({ success: true, data: user });
     } catch (error) {
       next(error);
     }

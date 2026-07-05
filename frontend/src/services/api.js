@@ -37,6 +37,7 @@ export const authAPI = {
 export const userAPI = {
   getAll: (params) => api.get('/users', { params }),
   getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post('/users', data),
   update: (id, data) => {
     if (data instanceof FormData) {
       return api.put(`/users/${id}`, data, {
@@ -54,6 +55,12 @@ export const projectAPI = {
   update: (id, data) => api.put(`/projects/${id}`, data),
   delete: (id) => api.delete(`/projects/${id}`),
   getStatistics: (id) => api.get(`/projects/${id}/statistics`),
+  getMembers: (id) => api.get(`/projects/${id}/members`),
+  addMember: (id, userId, role) => api.post(`/projects/${id}/members`, { user_id: userId, role }),
+  removeMember: (id, userId) => api.delete(`/projects/${id}/members/${userId}`),
+  transferOwnership: (id, userId) => api.put(`/projects/${id}/owner`, { user_id: userId }),
+  changeManager: (id, userId) => api.put(`/projects/${id}/manager`, { user_id: userId }),
+  getActivities: (id) => api.get(`/projects/${id}/activities`),
 };
 
 export const defectAPI = {
@@ -92,6 +99,7 @@ export const commentAPI = {
 
 export const notificationAPI = {
   getAll: () => api.get('/notifications'),
+  create: (data) => api.post('/notifications', data),
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),

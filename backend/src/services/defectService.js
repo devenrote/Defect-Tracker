@@ -5,6 +5,7 @@ const defectRepository = require('../repositories/defectRepository');
 const notificationRepository = require('../repositories/notificationRepository');
 const activityRepository = require('../repositories/activityRepository');
 const AppError = require('../utils/AppError');
+const pool = require('../config/database');
 
 const uploadToCloudinary = (file) => {
   return new Promise((resolve, reject) => {
@@ -20,6 +21,10 @@ const uploadToCloudinary = (file) => {
 };
 
 class DefectService {
+  async notifyManagers(type, title, message, issueId = null) {
+    await notificationRepository.notifyAdminsAndManagers(type, title, message, issueId);
+  }
+
   async getAllDefects(filters) {
     return defectRepository.findAll(filters);
   }
@@ -57,6 +62,14 @@ class DefectService {
       user.id,
       `Uploaded attachment: ${file.originalname}`,
       'issue',
+      defectId
+    );
+
+    // Notify admins
+    await this.notifyManagers(
+      'attachment_uploaded',
+      'Attachment Uploaded',
+      `${user.full_name} uploaded attachment "${file.originalname}" on defect DF-${defectId}.`,
       defectId
     );
 
@@ -105,6 +118,28 @@ class DefectService {
       reported_by: user.id,
       status: defectData.assigned_to ? 'Assigned' : 'Open',
     });
+
+    try {
+      const [projRows] = await pool.execute('SELECT project_name FROM projects WHERE id = ?', [defect.project_id]);
+      const projectName = projRows.length > 0 ? projRows[0].project_name : 'N/A';
+      await this.notifyManagers(
+        'defect_reported',
+        'New Defect Reported',
+        `New defect "${defect.title}" reported in project "${projectName}" by ${user.full_name}.`,
+        defect.id
+      );
+
+      if (defect.severity === 'Critical') {
+        await this.notifyManagers(
+          'critical_defect_created',
+          'Critical Defect Logged',
+          `CRITICAL defect reported in "${projectName}" by ${user.full_name}: "${defect.title}"`,
+          defect.id
+        );
+      }
+    } catch (err) {
+      console.error('Error triggering manager notification on defect creation:', err);
+    }
 
     if (defectData.assigned_to) {
       await defectRepository.addStatusHistory(defect.id, null, 'Assigned', user.id);
@@ -216,19 +251,80 @@ class DefectService {
           });
         }
       }
+
+      // Notify managers
+      let managerMsg = `Defect "${defect.title}" status changed to ${defectData.status} by ${user.full_name}.`;
+      let managerTitle = 'Defect Status Updated';
+      let managerType = 'status_changed';
+      
+      if (defectData.status === 'Closed') {
+        managerMsg = `Defect "${defect.title}" has been verified and closed by ${user.full_name}.`;
+        managerTitle = 'Defect Closed';
+        managerType = 'defect_closed';
+      } else if (defectData.status === 'Reopened') {
+        managerMsg = `Tester ${user.full_name} rejected verification for defect "${defect.title}".`;
+        managerTitle = 'Verification Rejected (Reopened)';
+        managerType = 'tester_rejected_verification';
+        
+        if (defect.severity === 'Critical') {
+          await this.notifyManagers(
+            'critical_defect_reopened',
+            'Critical Defect Reopened',
+            `CRITICAL defect reopened by ${user.full_name}: "${defect.title}"`,
+            id
+          );
+        }
+      } else if (defectData.status === 'Resolved') {
+        managerMsg = `Defect "${defect.title}" resolved and marked ready for QA verification by developer ${user.full_name}.`;
+        managerTitle = 'Defect Resolved (Ready for QA)';
+        managerType = 'defect_resolved';
+      } else if (defectData.status === 'Verified') {
+        managerMsg = `Defect "${defect.title}" has been verified by tester ${user.full_name}.`;
+        managerTitle = 'Defect Verified';
+        managerType = 'tester_verified_defect';
+      } else if (defectData.status === 'In Progress') {
+        managerMsg = `Developer ${user.full_name} started work on defect "${defect.title}".`;
+        managerTitle = 'Developer Started Work';
+        managerType = 'work_started';
+      }
+      await this.notifyManagers(managerType, managerTitle, managerMsg, id);
     }
 
     if (defectData.assigned_to !== undefined && defectData.assigned_to !== defect.assignee_id) {
       defectData.assigned_by = user.id;
       await defectRepository.addHistory(id, 'assigned_to', defect.assignee_id, defectData.assigned_to, user.id);
 
-      await notificationRepository.create({
-        user_id: defectData.assigned_to,
-        type: 'defect_assigned',
-        title: 'Defect Assigned',
-        message: `You have been assigned defect: ${defect.title}`,
-        issue_id: id,
-      });
+      if (defectData.assigned_to) {
+        await notificationRepository.create({
+          user_id: defectData.assigned_to,
+          type: 'defect_assigned',
+          title: 'Defect Assigned',
+          message: `You have been assigned defect: ${defect.title}`,
+          issue_id: id,
+        });
+
+        try {
+          const [assigneeRows] = await pool.execute('SELECT full_name FROM users WHERE id = ?', [defectData.assigned_to]);
+          const assigneeName = assigneeRows.length > 0 ? assigneeRows[0].full_name : 'Unassigned';
+          const isReassignment = defect.assignee_id !== null && defect.assignee_id !== defectData.assigned_to;
+          await this.notifyManagers(
+            isReassignment ? 'defect_reassigned' : 'defect_assigned',
+            isReassignment ? 'Defect Reassigned' : 'Defect Assigned',
+            `Defect "${defect.title}" ${isReassignment ? 'reassigned' : 'assigned'} to ${assigneeName} by ${user.full_name}.`,
+            id
+          );
+        } catch (err) {
+          console.error('Error triggering manager notification on defect assignment:', err);
+        }
+      } else {
+        await this.notifyManagers(
+          'defect_unassigned',
+          'Defect Unassigned',
+          `Defect "${defect.title}" was unassigned by ${user.full_name}.`,
+          id
+        );
+      }
+
       if (!defectData.status) {
         defectData.status = 'Assigned';
       }
@@ -277,10 +373,32 @@ class DefectService {
     if (defectData.priority !== undefined && defectData.priority !== defect.priority) {
       await defectRepository.addHistory(id, 'priority', defect.priority, defectData.priority, user.id);
       await activityRepository.logActivity(user.id, `Priority changed to ${defectData.priority}`, 'issue', id);
+      await this.notifyManagers(
+        'priority_changed',
+        'Priority Changed',
+        `Priority of defect DF-${id} was changed to "${defectData.priority}" by ${user.full_name}.`,
+        id
+      );
+    }
+    if (defectData.severity !== undefined && defectData.severity !== defect.severity) {
+      await defectRepository.addHistory(id, 'severity', defect.severity, defectData.severity, user.id);
+      await activityRepository.logActivity(user.id, `Severity changed to ${defectData.severity}`, 'issue', id);
+      await this.notifyManagers(
+        'severity_changed',
+        'Severity Changed',
+        `Severity of defect DF-${id} was changed to "${defectData.severity}" by ${user.full_name}.`,
+        id
+      );
     }
     if (defectData.due_date !== undefined && defectData.due_date !== defect.due_date) {
       await defectRepository.addHistory(id, 'due_date', defect.due_date, defectData.due_date, user.id);
       await activityRepository.logActivity(user.id, `Due date updated`, 'issue', id);
+      await this.notifyManagers(
+        'due_date_changed',
+        'Due Date Changed',
+        `Due date of defect DF-${id} was updated to ${new Date(defectData.due_date).toLocaleDateString()} by ${user.full_name}.`,
+        id
+      );
     }
     if (defectData.sprint !== undefined && defectData.sprint !== defect.sprint) {
       await defectRepository.addHistory(id, 'sprint', defect.sprint, defectData.sprint, user.id);
@@ -362,8 +480,57 @@ class DefectService {
 
       stats.recentDefects = await defectRepository.findAll({ project_id: projectId, limit: 5 });
       stats.assignedToMe = await defectRepository.findAll({ status: 'Open', project_id: projectId, limit: 5 });
+
+      // Active Users (N/A because login/session tracking does not exist in DB)
+      stats.activeUsers = null;
+
+      // Action Required stats (Pending Assignment, Reopened, Overdue, Ready For QA)
+      let countQuery = `
+        SELECT 
+          SUM(CASE WHEN assignee_id IS NULL AND status IN ('Open', 'Reviewed') THEN 1 ELSE 0 END) as pending_assignment,
+          SUM(CASE WHEN status = 'Reopened' THEN 1 ELSE 0 END) as reopened,
+          SUM(CASE WHEN due_date < NOW() AND status NOT IN ('Resolved', 'Verified', 'Closed') THEN 1 ELSE 0 END) as overdue
+        FROM issues WHERE 1=1
+      `;
+      const countParams = [];
+      if (projectId) {
+        countQuery += ' AND project_id = ?';
+        countParams.push(projectId);
+      }
+      const [countsRow] = await require('../config/database').execute(countQuery, countParams);
+      const counts = countsRow[0] || {};
+      stats.pendingAssignment = parseInt(counts.pending_assignment, 10) || 0;
+      stats.reopenedDefects = parseInt(counts.reopened, 10) || 0;
+      stats.overdueDefects = parseInt(counts.overdue, 10) || 0;
+      stats.readyForQA = await defectRepository.count(projectId ? { status: 'Ready For QA', project_id: projectId } : { status: 'Ready For QA' });
+
+      // Monthly Trend
+      const filterParams = projectId ? { project_id: projectId } : {};
+      stats.monthlyTrend = await defectRepository.getMonthlyTrends(filterParams);
+
+      // System Activities (Using existing activity_logs)
+      try {
+        const activityRepository = require('../repositories/activityRepository');
+        const actFilters = { limit: 5 };
+        if (projectId) actFilters.entity_id = projectId; // filter by project if selected
+        const rawActivities = await activityRepository.findActivities(actFilters);
+        
+        stats.recentActivities = rawActivities.map(act => ({
+          id: act.id,
+          user_name: act.user_name || 'System',
+          action: act.action,
+          changed_at: act.created_at,
+          defect_id: act.entity_type === 'issue' ? act.entity_id : null
+        }));
+      } catch (err) {
+        console.error('Error fetching recent activities for admin dashboard:', err);
+        stats.recentActivities = [];
+      }
     } else if (role === 'tester') {
-      const rawTotalProjects = await require('../repositories/projectRepository').count();
+      const [membersRows] = await require('../config/database').execute(
+        'SELECT COUNT(DISTINCT project_id) as count FROM project_members WHERE user_id = ?',
+        [userId]
+      );
       const rawReportedDefects = await defectRepository.count({ reported_by: userId, project_id: projectId });
       const rawOpenDefects = await defectRepository.count({ reported_by: userId, status: 'Open', project_id: projectId });
       const rawReopenedDefects = await defectRepository.count({ reported_by: userId, status: 'Reopened', project_id: projectId });
@@ -372,7 +539,7 @@ class DefectService {
       const rawClosedDefects = await defectRepository.count({ reported_by: userId, status: 'Closed', project_id: projectId });
       const rawCriticalDefects = await defectRepository.count({ reported_by: userId, severity: 'Critical', project_id: projectId });
 
-      stats.totalProjects = parseInt(rawTotalProjects, 10) || 0;
+      stats.totalProjects = parseInt(membersRows[0].count, 10) || 0;
       stats.totalDefects = parseInt(rawReportedDefects, 10) || 0;
       stats.openDefects = (parseInt(rawOpenDefects, 10) || 0) + (parseInt(rawReopenedDefects, 10) || 0);
       stats.pendingVerification = (parseInt(rawResolvedDefects, 10) || 0) + (parseInt(rawTestingDefects, 10) || 0);
@@ -618,24 +785,22 @@ class DefectService {
     return stats;
   }
 
-  async getReports(user) {
+  async getReports(user, filters = {}) {
+    const filter = { ...filters };
     if (user && user.role !== 'admin') {
-      const filter = { user_id: user.id, role: user.role };
-      return {
-        byProject: await defectRepository.getByProject(filter),
-        bySeverity: await defectRepository.getBySeverity(filter),
-        byDeveloper: await defectRepository.getByDeveloper(filter),
-        byStatus: await defectRepository.getByStatus(filter),
-        monthlyTrends: await defectRepository.getMonthlyTrends(filter)
-      };
+      filter.user_id = user.id;
+      filter.role = user.role;
     }
 
     return {
-      byProject: await defectRepository.getByProject(),
-      bySeverity: await defectRepository.getBySeverity(),
-      byDeveloper: await defectRepository.getByDeveloper(),
-      byStatus: await defectRepository.getByStatus(),
-      monthlyTrends: await defectRepository.getMonthlyTrends()
+      byProject: await defectRepository.getByProject(filter),
+      bySeverity: await defectRepository.getBySeverity(filter),
+      byDeveloper: await defectRepository.getByDeveloper(filter),
+      byStatus: await defectRepository.getByStatus(filter),
+      monthlyTrends: await defectRepository.getMonthlyTrends(filter),
+      developerPerformance: await defectRepository.getDeveloperPerformance(filter),
+      topCriticalDefects: await defectRepository.getTopCriticalDefects(filter),
+      filteredDefects: await defectRepository.getFilteredDefects(filter)
     };
   }
 }

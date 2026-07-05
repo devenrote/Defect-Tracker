@@ -32,6 +32,14 @@ class CommentService {
       }
     }
 
+    // Notify admins and managers
+    await notificationRepository.notifyAdminsAndManagers(
+      'comment_added',
+      'Comment Added',
+      `${user.full_name} added a comment on defect DF-${defect.id}: "${defect.title}"`,
+      commentData.defect_id
+    );
+
     return comment;
   }
 

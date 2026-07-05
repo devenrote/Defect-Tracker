@@ -32,7 +32,14 @@ class AuthService {
       throw new AppError('Invalid email or password', 401);
     }
 
+    // Update last login timestamp in db
+    await userRepository.update(user.id, { last_login: new Date() });
+
     const { password: _, ...userWithoutPassword } = user;
+    // Set status to Active upon logging in
+    userWithoutPassword.status = user.status || 'Active';
+    userWithoutPassword.last_login = new Date();
+    
     const token = generateToken(userWithoutPassword);
     return { user: userWithoutPassword, token };
   }
