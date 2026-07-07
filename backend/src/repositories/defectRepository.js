@@ -162,6 +162,14 @@ class DefectRepository {
       query += ' AND created_at <= ?';
       params.push(filters.endDate);
     }
+    if (filters.reported_by) {
+      query += ' AND reporter_id = ?';
+      params.push(filters.reported_by);
+    }
+    if (filters.assigned_to) {
+      query += ' AND assignee_id = ?';
+      params.push(filters.assigned_to);
+    }
     if (filters.user_id && filters.role !== 'admin') {
       query += ' AND project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
       params.push(filters.user_id);
@@ -185,6 +193,14 @@ class DefectRepository {
     if (filters.endDate) {
       query += ' AND created_at <= ?';
       params.push(filters.endDate);
+    }
+    if (filters.reported_by) {
+      query += ' AND reporter_id = ?';
+      params.push(filters.reported_by);
+    }
+    if (filters.assigned_to) {
+      query += ' AND assignee_id = ?';
+      params.push(filters.assigned_to);
     }
     if (filters.user_id && filters.role !== 'admin') {
       query += ' AND project_id IN (SELECT project_id FROM project_members WHERE user_id = ?)';
@@ -270,7 +286,14 @@ class DefectRepository {
     
     let whereClause = 'WHERE 1=1';
     const params1 = [];
-    if (filters.project_id) {
+    if (filters.role === 'developer') {
+      whereClause += ' AND assignee_id = ?';
+      params1.push(filters.user_id);
+      if (filters.project_id) {
+        whereClause += ' AND project_id = ?';
+        params1.push(filters.project_id);
+      }
+    } else if (filters.project_id) {
       whereClause += ' AND project_id = ?';
       params1.push(filters.project_id);
     } else if (filters.user_id && filters.role !== 'admin') {
@@ -280,7 +303,14 @@ class DefectRepository {
     
     let histWhereClause = "WHERE h.field_name = 'status' AND h.new_value = 'Resolved'";
     const params2 = [];
-    if (filters.project_id) {
+    if (filters.role === 'developer') {
+      histWhereClause += ' AND i.assignee_id = ?';
+      params2.push(filters.user_id);
+      if (filters.project_id) {
+        histWhereClause += ' AND i.project_id = ?';
+        params2.push(filters.project_id);
+      }
+    } else if (filters.project_id) {
       histWhereClause += ' AND i.project_id = ?';
       params2.push(filters.project_id);
     } else if (filters.user_id && filters.role !== 'admin') {

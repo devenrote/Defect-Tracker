@@ -26,6 +26,11 @@ class NotificationService {
     return notificationRepository.markAllAsRead(userId);
   }
 
+  async deleteReadNotifications(userId) {
+    await pool.execute('DELETE FROM notifications WHERE user_id = ? AND is_read = TRUE', [userId]);
+    return true;
+  }
+
   async generateSystemNotifications(userId) {
     try {
       const [userRows] = await pool.execute('SELECT role FROM users WHERE id = ?', [userId]);
@@ -125,6 +130,38 @@ class NotificationService {
               issue.id
             ]
           );
+        }
+      }
+
+      // 4. Storage size check for storage warning (only for Admins/Managers)
+      if (isManagerOrAdmin) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const uploadsDir = path.join(__dirname, '../../uploads');
+          if (fs.existsSync(uploadsDir)) {
+            const files = fs.readdirSync(uploadsDir);
+            let totalSize = 0;
+            for (const file of files) {
+              const stats = fs.statSync(path.join(uploadsDir, file));
+              totalSize += stats.size;
+            }
+            // Warning if uploads directory exceeds 5MB
+            if (totalSize > 5 * 1024 * 1024) {
+              const [existing] = await pool.execute(
+                "SELECT 1 FROM notifications WHERE user_id = ? AND type = 'storage_warning'",
+                [userId]
+              );
+              if (existing.length === 0) {
+                await pool.execute(
+                  "INSERT INTO notifications (user_id, type, title, message) VALUES (?, 'storage_warning', 'System Warning: Storage Limit Reached', 'Warning: Uploads directory has exceeded the 5MB space limit.')",
+                  [userId]
+                );
+              }
+            }
+          }
+        } catch (storageErr) {
+          console.error('Storage capacity verification check failed:', storageErr);
         }
       }
     } catch (err) {

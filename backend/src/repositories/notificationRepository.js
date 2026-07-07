@@ -47,9 +47,51 @@ class NotificationRepository {
   async notifyAdminsAndManagers(type, title, message, targetId = null) {
     try {
       const [users] = await pool.execute(
-        "SELECT id FROM users WHERE role IN ('admin', 'manager', 'project_manager')"
+        "SELECT id, role, notification_settings FROM users WHERE role IN ('super_admin', 'admin', 'manager', 'project_manager')"
       );
+
+      const eventTypeToPreferenceMap = {
+        defect_assigned: 'defectAssigned',
+        defect_resolved: 'defectResolved',
+        defect_status_changed: 'defectResolved',
+        comment_added: 'commentAdded',
+        weekly_report: 'weeklyReport',
+        project_created: 'newProjectCreated',
+        project_archived: 'newProjectCreated',
+        project_updated: 'newProjectCreated',
+        project_deleted: 'newProjectCreated',
+        manager_assigned: 'projectAssigned',
+        manager_removed: 'projectAssigned',
+        user_created: 'newUserAdded',
+        user_deleted: 'newUserAdded',
+        user_activated: 'newUserAdded',
+        user_deactivated: 'newUserAdded',
+        role_changed: 'newUserAdded',
+        critical_defect: 'criticalDefect',
+        critical_defect_created: 'criticalDefect',
+        defect_closed: 'defectClosed',
+        weekly_summary: 'weeklySummary'
+      };
+
+      const prefKey = eventTypeToPreferenceMap[type];
+
       for (const u of users) {
+        // Respect preferences if user has them configured
+        if (prefKey && u.notification_settings) {
+          try {
+            const preferences = typeof u.notification_settings === 'string'
+              ? JSON.parse(u.notification_settings)
+              : u.notification_settings;
+            
+            if (preferences && preferences[prefKey] === false) {
+              // Skip sending notification to this user
+              continue;
+            }
+          } catch (e) {
+            console.error('Error parsing notification settings for user:', u.id, e);
+          }
+        }
+
         await this.create({
           user_id: u.id,
           type,

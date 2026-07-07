@@ -12,6 +12,12 @@ import {
 import { notificationAPI, defectAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import NotificationDropdown from './notifications/NotificationDropdown';
+import { 
+  AdminNotificationService, 
+  ManagerNotificationService, 
+  DeveloperNotificationService, 
+  TesterNotificationService 
+} from '../services/notificationServices';
 
 const NotificationBell = () => {
   const navigate = useNavigate();
@@ -31,23 +37,11 @@ const NotificationBell = () => {
       setNotifications(notifRes.data.data);
       setUnreadCount(countRes.data.data.count);
       setDefects(defectsRes.data.data);
-    } catch {
-      // fallback mock notifications if api fails
-      setNotifications([
-        { id: 1, type: 'defect_resolved', message: 'Mike Developer marked this defect as Resolved. Please verify the fix.', is_read: false, issue_id: 16, created_at: new Date(Date.now() - 300000).toISOString() },
-        { id: 2, type: 'comment_added', message: 'Mike Developer commented: "Please verify the latest fix."', is_read: false, issue_id: 15, created_at: new Date(Date.now() - 720000).toISOString() },
-        { id: 3, type: 'attachment_added', message: 'Uploaded attachment: fix_screenshot.png', is_read: false, issue_id: 21, created_at: new Date(Date.now() - 1200000).toISOString() },
-        { id: 4, type: 'status_changed', message: 'Status changed Assigned → In Progress By Mike Developer', is_read: false, issue_id: 18, created_at: new Date(Date.now() - 2100000).toISOString() },
-        { id: 5, type: 'defect_verified', message: 'You successfully verified and closed this defect.', is_read: true, issue_id: 30, created_at: new Date().toISOString() }
-      ]);
-      setUnreadCount(4);
-      setDefects([
-        { id: 16, title: 'Sale Issue', reporter_id: 3, assignee_id: 2 },
-        { id: 15, title: 'Contact Form', reporter_id: 3, assignee_id: 2 },
-        { id: 21, title: 'Login Error', reporter_id: 3, assignee_id: 2 },
-        { id: 18, title: 'Payment Issue', reporter_id: 3, assignee_id: 2 },
-        { id: 30, title: 'Cart Issue', reporter_id: 3, assignee_id: 2 }
-      ]);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      setNotifications([]);
+      setUnreadCount(0);
+      setDefects([]);
     }
   };
 
@@ -206,20 +200,26 @@ const NotificationBell = () => {
     }
   };
 
-  // Tester Role-based notifications filtering
-  const filteredNotifications = notifications.filter((n) => {
-    if (user?.role === 'tester') {
-      const defect = defects.find(d => d.id === n.issue_id);
-      if (defect) {
-        const isReportedByMe = Number(defect.reporter_id) === Number(user.id) || defect.reporter_name === user.full_name;
-        const isAssignedToMe = Number(defect.assignee_id) === Number(user.id) || defect.assignee_name === user.full_name;
-        if (!isReportedByMe && !isAssignedToMe) return false;
-      }
-      if (n.type === 'priority_changed' || n.type === 'due_date_changed') return false;
-      if (n.type === 'defect_assigned' && defect && defect.assignee_name !== user.full_name) return false;
+  // Role-based notifications filtering using dedicated services
+  const getFilteredNotifications = () => {
+    if (!user) return [];
+    const role = user.role;
+    if (role === 'admin' || role === 'super_admin') {
+      return AdminNotificationService.getNotifications(notifications);
     }
-    return true;
-  });
+    if (role === 'manager' || role === 'project_manager') {
+      return ManagerNotificationService.getNotifications(notifications);
+    }
+    if (role === 'developer') {
+      return DeveloperNotificationService.getNotifications(notifications, user.id, defects);
+    }
+    if (role === 'tester') {
+      return TesterNotificationService.getNotifications(notifications, user.id, defects, user.full_name);
+    }
+    return notifications;
+  };
+
+  const filteredNotifications = getFilteredNotifications();
 
   const unreadFilteredCount = filteredNotifications.filter(n => !n.is_read).length;
 

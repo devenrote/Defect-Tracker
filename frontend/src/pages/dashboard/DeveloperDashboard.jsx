@@ -298,29 +298,37 @@ const DeveloperDashboard = () => {
               <TrendingUp className="w-4 h-4 text-slate-400" />
             </div>
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats?.monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorDefects" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800" />
-                  <XAxis dataKey="month" fontSize={11} stroke="#94a3b8" tickLine={false} />
-                  <YAxis fontSize={11} stroke="#94a3b8" tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  />
-                  <Legend verticalAlign="top" height={36} iconType="circle" fontSize={11} />
-                  <Area type="monotone" dataKey="defects" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorDefects)" name="Reported Defects" />
-                  <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorResolved)" name="Resolved Issues" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {!stats?.monthlyTrend || stats.monthlyTrend.length === 0 ? (
+                <div className="h-full w-full flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 p-6">
+                  <TrendingUp className="w-8 h-8 text-slate-300 dark:text-slate-700 mb-2" />
+                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400">No defect activity available.</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">There are no reported or resolved defects assigned to you.</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats?.monthlyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorDefects" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800" />
+                    <XAxis dataKey="month" fontSize={11} stroke="#94a3b8" tickLine={false} />
+                    <YAxis fontSize={11} stroke="#94a3b8" tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    />
+                    <Legend verticalAlign="top" height={36} iconType="circle" fontSize={11} />
+                    <Area type="monotone" dataKey="defects" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorDefects)" name="Reported Defects" />
+                    <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorResolved)" name="Resolved Issues" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 

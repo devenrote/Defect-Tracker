@@ -8,7 +8,7 @@ class UserRepository {
 
   async findById(id) {
     const [rows] = await pool.execute(
-      'SELECT id, full_name, email, role, avatar, status, last_login, created_at FROM users WHERE id = ?',
+      'SELECT id, full_name, email, role, avatar, status, last_login, created_at, api_key, token_invalid_before, notification_settings FROM users WHERE id = ?',
       [id]
     );
     return rows[0];
@@ -53,7 +53,7 @@ class UserRepository {
       orderClause = 'ORDER BY last_login DESC';
     }
 
-    let selectQuery = 'SELECT id, full_name, email, role, avatar, status, last_login, created_at ' + baseQuery + ' ' + orderClause;
+    let selectQuery = 'SELECT id, full_name, email, role, avatar, status, last_login, created_at, api_key, token_invalid_before, notification_settings ' + baseQuery + ' ' + orderClause;
 
     if (isPaging) {
       const page = parseInt(filters.page, 10) || 1;
@@ -110,6 +110,18 @@ class UserRepository {
     if (userData.last_login !== undefined) {
       fields.push('last_login = ?');
       params.push(userData.last_login);
+    }
+    if (userData.api_key !== undefined) {
+      fields.push('api_key = ?');
+      params.push(userData.api_key);
+    }
+    if (userData.token_invalid_before !== undefined) {
+      fields.push('token_invalid_before = ?');
+      params.push(userData.token_invalid_before);
+    }
+    if (userData.notification_settings !== undefined) {
+      fields.push('notification_settings = ?');
+      params.push(userData.notification_settings);
     }
 
     if (fields.length === 0) return this.findById(id);

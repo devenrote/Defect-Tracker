@@ -49,6 +49,15 @@ class NotificationController {
       next(error);
     }
   }
+
+  async deleteReadNotifications(req, res, next) {
+    try {
+      await notificationService.deleteReadNotifications(req.user.id);
+      res.json({ success: true, message: 'Read notifications cleared successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new NotificationController();

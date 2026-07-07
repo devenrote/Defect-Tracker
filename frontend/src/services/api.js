@@ -32,6 +32,11 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
+  changePassword: (data) => api.put('/auth/change-password', data),
+  logoutAll: () => api.post('/auth/logout-all'),
+  getSessionInfo: () => api.get('/auth/session-info'),
+  getPublicStats: () => api.get('/auth/public-stats'),
+  submitInquiry: (data) => api.post('/auth/contact-inquiry', data),
 };
 
 export const userAPI = {
@@ -46,6 +51,7 @@ export const userAPI = {
     }
     return api.put(`/users/${id}`, data);
   },
+  generateApiKey: () => api.post('/users/api-key'),
 };
 
 export const projectAPI = {
@@ -103,10 +109,16 @@ export const notificationAPI = {
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),
+  clearRead: () => api.delete('/notifications/read'),
 };
 
 export const activityAPI = {
   getActivities: (params) => api.get('/activities', { params }),
+};
+
+export const publicAPI = {
+  getStats: () => api.get('/public/stats'),
+  submitContact: (data) => api.post('/contact', data),
 };
 
 export default api;

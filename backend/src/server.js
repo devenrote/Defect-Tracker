@@ -7,6 +7,7 @@ const PORT = parseInt(process.env.PORT, 10) || 5000;
 const startServer = async () => {
   try {
     await db.query('SELECT 1');
+    await db.initializeDatabase();
     const server = app.listen(PORT, () => {
       console.log(`Defect Tracker Pro API running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);

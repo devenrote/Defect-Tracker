@@ -51,34 +51,65 @@ class DefectService {
     const defect = await defectRepository.findById(defectId);
     if (!defect) throw new AppError('Defect not found', 404);
 
-    const fileUrl = await uploadToCloudinary(file);
-    const [rows] = await require('../config/database').execute(
-      'INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by) VALUES (?, ?, ?, ?) RETURNING id',
-      [defectId, file.originalname, fileUrl, user.id]
-    );
-    
-    // Log activity
-    await activityRepository.logActivity(
-      user.id,
-      `Uploaded attachment: ${file.originalname}`,
-      'issue',
-      defectId
-    );
+    let client;
+    let committed = false;
 
-    // Notify admins
-    await this.notifyManagers(
-      'attachment_uploaded',
-      'Attachment Uploaded',
-      `${user.full_name} uploaded attachment "${file.originalname}" on defect DF-${defectId}.`,
-      defectId
-    );
+    try {
+      const fileUrl = await uploadToCloudinary(file);
+      client = await pool.pool.connect();
+      await client.query('BEGIN');
 
-    const uploadedResult = await require('../config/database').execute(
-      'SELECT a.*, u.full_name as uploaded_by_name FROM issue_attachments a LEFT JOIN users u ON a.uploaded_by = u.id WHERE a.id = ?',
-      [rows[0].id]
-    );
+      const insertResult = await client.query(
+        `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, issue_id, file_name, file_url, uploaded_by, uploaded_at`,
+        [defectId, file.originalname, fileUrl, user.id]
+      );
 
-    return uploadedResult[0][0];
+      await client.query('COMMIT');
+      committed = true;
+
+      const attachment = insertResult.rows[0];
+
+      try {
+        await activityRepository.logActivity(
+          user.id,
+          `Uploaded attachment: ${file.originalname}`,
+          'issue',
+          defectId
+        );
+      } catch (activityError) {
+        console.error('Failed to log attachment activity:', activityError);
+      }
+
+      try {
+        await this.notifyManagers(
+          'attachment_uploaded',
+          'Attachment Uploaded',
+          `${user.full_name} uploaded attachment "${file.originalname}" on defect DF-${defectId}.`,
+          defectId
+        );
+      } catch (notificationError) {
+        console.error('Failed to notify managers about attachment upload:', notificationError);
+      }
+
+      return attachment;
+    } catch (error) {
+      if (client && !committed) {
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackError) {
+          console.error('Failed to rollback attachment insert transaction:', rollbackError);
+        }
+      }
+
+      console.error('Failed to persist attachment to issue_attachments:', error);
+      throw new AppError('Failed to save attachment', 500);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 
   async createDefect(defectData, file, user) {
@@ -134,6 +165,15 @@ class DefectService {
           'critical_defect_created',
           'Critical Defect Logged',
           `CRITICAL defect reported in "${projectName}" by ${user.full_name}: "${defect.title}"`,
+          defect.id
+        );
+      }
+
+      if (defect.priority === 'High') {
+        await this.notifyManagers(
+          'high_priority_defect_created',
+          'High Priority Defect Created',
+          `High priority defect reported in "${projectName}" by ${user.full_name}: "${defect.title}"`,
           defect.id
         );
       }
@@ -302,6 +342,27 @@ class DefectService {
           message: `You have been assigned defect: ${defect.title}`,
           issue_id: id,
         });
+
+        try {
+          const [userRows] = await pool.execute('SELECT full_name, role FROM users WHERE id = ?', [defectData.assigned_to]);
+          if (userRows.length > 0) {
+            const assignedUser = userRows[0];
+            let eventType = 'defect_assigned';
+            let title = 'Defect Assigned';
+            let msg = `Defect "${defect.title}" was assigned to ${assignedUser.full_name} (${assignedUser.role}) by ${user.full_name}.`;
+            
+            if (assignedUser.role === 'developer') {
+              eventType = 'manager_assigned_developer';
+              title = 'Developer Assigned to Defect';
+            } else if (assignedUser.role === 'tester') {
+              eventType = 'manager_assigned_tester';
+              title = 'Tester Assigned to Defect';
+            }
+            await this.notifyManagers(eventType, title, msg, id);
+          }
+        } catch (err) {
+          console.error('Error triggering manager_assigned_user notification:', err);
+        }
 
         try {
           const [assigneeRows] = await pool.execute('SELECT full_name FROM users WHERE id = ?', [defectData.assigned_to]);
@@ -481,8 +542,11 @@ class DefectService {
       stats.recentDefects = await defectRepository.findAll({ project_id: projectId, limit: 5 });
       stats.assignedToMe = await defectRepository.findAll({ status: 'Open', project_id: projectId, limit: 5 });
 
-      // Active Users (N/A because login/session tracking does not exist in DB)
-      stats.activeUsers = null;
+      // Active Users count from PostgreSQL
+      const [activeUsersRow] = await require('../config/database').execute(
+        "SELECT COUNT(*) as count FROM users WHERE status = 'Active'"
+      );
+      stats.activeUsers = parseInt(activeUsersRow[0].count, 10) || 0;
 
       // Action Required stats (Pending Assignment, Reopened, Overdue, Ready For QA)
       let countQuery = `
@@ -602,6 +666,12 @@ class DefectService {
       
       const allAssigned = await defectRepository.findAll({ assigned_to: userId });
       stats.assignedToMe = allAssigned.filter((d) => !['Resolved', 'Verified', 'Closed'].includes(d.status));
+
+      stats.monthlyTrend = await defectRepository.getMonthlyTrends({
+        user_id: userId,
+        role: 'developer',
+        project_id: projectId
+      });
     } else if (role === 'manager' || role === 'project_manager') {
       const dbResult = await require('../config/database').execute(
         'SELECT project_id FROM project_members WHERE user_id = ?',

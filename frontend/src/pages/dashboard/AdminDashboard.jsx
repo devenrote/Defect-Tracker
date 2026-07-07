@@ -218,18 +218,21 @@ const AdminDashboard = () => {
             value={stats?.totalProjects || 0} 
             icon={FolderKanban} 
             color="primary" 
+            onClick={() => navigate('/projects')}
           />
           <StatCard 
             title="Total Users" 
             value={stats?.totalUsers || 0} 
             icon={Users} 
             color="primary" 
+            onClick={() => navigate('/users')}
           />
           <StatCard 
             title="Total Defects" 
             value={stats?.totalDefects || 0} 
             icon={Bug} 
             color="primary" 
+            onClick={() => navigate('/defects')}
           />
           <StatCard 
             title="Open Defects" 
@@ -250,6 +253,7 @@ const AdminDashboard = () => {
             value={stats?.activeUsers !== null && stats?.activeUsers !== undefined ? stats.activeUsers : "N/A"} 
             icon={Users} 
             color="purple" 
+            onClick={() => navigate('/users', { state: { filter: { status: 'Active' } } })}
           />
         </div>
 

@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { publicAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import { 
   Bug, 
   FolderKanban, 
@@ -11,15 +14,55 @@ import {
   Play, 
   Zap, 
   Activity, 
-  FileSpreadsheet 
+  FileSpreadsheet,
+  X,
+  Send,
+  Mail,
+  MapPin,
+  Laptop
 } from 'lucide-react';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+  
+  // Real stats state
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Demo Modal state
+  const [showDemoModal, setShowDemoModal] = useState(false);
+
+  // Contact form state
+  const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [submittingInquiry, setSubmittingInquiry] = useState(false);
+
+  // SEO & Headings setup
+  useEffect(() => {
+    document.title = "Defect Tracker — Premium Enterprise Issue Tracking Workspace";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", "Align project managers, QA engineers, and developers with real-time statistics, Jira-style bug logs, and custom project spaces on PostgreSQL.");
+    }
+  }, []);
+
+  // Fetch PostgreSQL-backed statistics
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await publicAPI.getStats();
+        setStats(res.data.data);
+      } catch (err) {
+        console.error('Failed to load database stats:', err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const features = [
     {
-      icon: <FolderKanban className="w-6 h-6 text-indigo-600" />,
+      icon: <FolderKanban className="w-6 h-6 text-indigo-650" />,
       title: "Multi-Project Spaces",
       description: "Organize defects across multiple projects, each with custom keys, settings, and milestones."
     },
@@ -77,6 +120,43 @@ const Home = () => {
     }
   ];
 
+  // Smooth scroll helper
+  const handleScrollTo = (e, id) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Contact Form Submission Handler
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.subject.trim() || !contactForm.message.trim()) {
+      toast.error('All inquiry fields are required');
+      return;
+    }
+    
+    // Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(contactForm.email.trim())) {
+      toast.error('Please enter a valid business email address');
+      return;
+    }
+
+    setSubmittingInquiry(true);
+    try {
+      await publicAPI.submitContact(contactForm);
+      toast.success('Inquiry submitted successfully! Our team will reach out shortly.');
+      setContactForm({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to submit inquiry. Please try again.');
+    } finally {
+      setSubmittingInquiry(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
       
@@ -93,11 +173,11 @@ const Home = () => {
             <span className="text-base font-extrabold text-slate-900 tracking-tight">Defect Tracker</span>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold text-slate-500">
-            <a href="#features" className="hover:text-indigo-600 transition-colors">Features</a>
-            <a href="#workflow" className="hover:text-indigo-600 transition-colors">Workflow</a>
-            <a href="#services" className="hover:text-indigo-600 transition-colors">Services</a>
-            <a href="#contact" className="hover:text-indigo-600 transition-colors">Contact</a>
+          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold text-slate-500" aria-label="Main Navigation">
+            <a href="#features" onClick={(e) => handleScrollTo(e, 'features')} className="hover:text-indigo-600 transition-colors">Features</a>
+            <a href="#workflow" onClick={(e) => handleScrollTo(e, 'workflow')} className="hover:text-indigo-600 transition-colors">Workflow</a>
+            <a href="#services" onClick={(e) => handleScrollTo(e, 'services')} className="hover:text-indigo-600 transition-colors">Services</a>
+            <a href="#contact" onClick={(e) => handleScrollTo(e, 'contact')} className="hover:text-indigo-600 transition-colors">Contact</a>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -146,14 +226,17 @@ const Home = () => {
                 <Link to="/register" className="btn-primary px-8 py-3.5 text-sm font-bold shadow-lg shadow-indigo-100 flex items-center gap-2">
                   Start Free Trial <ArrowRight className="w-4.5 h-4.5" />
                 </Link>
-                <Link to="/login" className="btn-secondary bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-8 py-3.5 text-sm font-bold shadow-sm flex items-center gap-2">
+                <button 
+                  onClick={() => setShowDemoModal(true)}
+                  className="btn-secondary bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-8 py-3.5 text-sm font-bold shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
                   <Play className="w-4 h-4 fill-slate-500 text-slate-500" /> Watch Demo Run
-                </Link>
+                </button>
               </>
             )}
           </div>
 
-          {/* SaaS Interface Mockup Frame */}
+          {/* Real Statistics Driven Dashboard Frame Mockup */}
           <div className="pt-12 md:pt-16">
             <div className="relative bg-white border border-slate-200 rounded-2xl shadow-premium p-3 md:p-4 max-w-4xl mx-auto">
               <div className="flex items-center gap-1.5 pb-3 border-b border-slate-100 px-1">
@@ -163,30 +246,36 @@ const Home = () => {
                 <div className="h-4.5 bg-slate-100 rounded-md px-3 text-[10px] text-slate-400 font-medium ml-4 w-48 text-left truncate">defecttracker.pro/dashboard</div>
               </div>
               
-              {/* Mockup Dashboard Content Grid */}
+              {/* Mockup Dashboard Content Grid (Driven by real PostgreSQL stats) */}
               <div className="bg-slate-50/50 rounded-xl p-4 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-left mt-3">
-                <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reported Defects</span>
-                    <h3 className="text-2xl font-black text-slate-800 mt-1">24</h3>
+                    <h3 className="text-2xl font-black text-slate-800 mt-1">
+                      {statsLoading ? '—' : (stats ? stats.reportedDefects : 'No Data Available')}
+                    </h3>
                   </div>
-                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <div className="p-3 bg-indigo-50 text-indigo-655 rounded-xl">
                     <Bug className="w-5 h-5" />
                   </div>
                 </div>
-                <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">In Progress</span>
-                    <h3 className="text-2xl font-black text-slate-850 mt-1">12</h3>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Workspace Users</span>
+                    <h3 className="text-2xl font-black text-slate-800 mt-1">
+                      {statsLoading ? '—' : (stats ? stats.activeUsers : 'No Data Available')}
+                    </h3>
                   </div>
-                  <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                    <Activity className="w-5 h-5" />
+                  <div className="p-3 bg-indigo-50 text-indigo-655 rounded-xl">
+                    <Users className="w-5 h-5" />
                   </div>
                 </div>
-                <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm flex items-center justify-between">
+                <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm flex items-center justify-between hover:shadow-md transition-all duration-300">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Verified Fixed</span>
-                    <h3 className="text-2xl font-black text-slate-800 mt-1">8</h3>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Verified / Resolved</span>
+                    <h3 className="text-2xl font-black text-slate-800 mt-1">
+                      {statsLoading ? '—' : (stats ? stats.verifiedResolved : 'No Data Available')}
+                    </h3>
                   </div>
                   <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                     <CheckCircle2 className="w-5 h-5" />
@@ -212,7 +301,11 @@ const Home = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
-              <div key={i} className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200/60 hover:border-slate-350 p-6 rounded-2xl transition-all duration-200 shadow-sm flex flex-col items-start gap-4">
+              <div 
+                key={i} 
+                tabIndex={0}
+                className="bg-slate-50/50 hover:bg-white border border-slate-200/60 hover:border-indigo-300 p-6 rounded-2xl transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 flex flex-col items-start gap-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
                 <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
                   {f.icon}
                 </div>
@@ -238,10 +331,14 @@ const Home = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
             {steps.map((s, i) => (
-              <div key={i} className="space-y-4 relative flex flex-col items-start bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <div 
+                key={i} 
+                tabIndex={0}
+                className="space-y-4 relative flex flex-col items-start bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-3xl font-black text-slate-100 tracking-tight">{s.number}</span>
-                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-0.5">{s.role}</span>
+                  <span className="text-[10px] font-bold text-indigo-655 bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-0.5">{s.role}</span>
                 </div>
                 <h3 className="text-sm font-extrabold text-slate-800 tracking-tight">{s.title}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">{s.desc}</p>
@@ -262,7 +359,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4 hover:shadow-md hover:border-indigo-200 transition-all duration-300">
               <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
                 <FolderKanban className="w-6 h-6 text-indigo-600" />
               </div>
@@ -274,7 +371,7 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4 hover:shadow-md hover:border-indigo-200 transition-all duration-300">
               <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
                 <ShieldCheck className="w-6 h-6 text-indigo-600" />
               </div>
@@ -286,7 +383,7 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4 hover:shadow-md hover:border-indigo-200 transition-all duration-300">
               <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
                 <Zap className="w-6 h-6 text-indigo-600" />
               </div>
@@ -298,7 +395,7 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4">
+            <div className="bg-slate-50/50 border border-slate-200/65 p-6 rounded-2xl flex items-start gap-4 hover:shadow-md hover:border-indigo-200 transition-all duration-300">
               <div className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm shrink-0">
                 <Activity className="w-6 h-6 text-indigo-600" />
               </div>
@@ -325,72 +422,99 @@ const Home = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
             
-            {/* Info panel */}
+            {/* Info panel (Displays ONLY real support info) */}
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-slate-50 border border-slate-200/70 p-6 rounded-2xl space-y-6 shadow-sm">
                 <h3 className="text-sm font-bold text-slate-800 tracking-tight">Contact Information</h3>
                 
-                <div className="space-y-4">
+                <div className="space-y-4 text-xs font-semibold">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-600 text-xs">
-                      📧
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-650 text-xs shrink-0">
+                      <Mail className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Sales & Support</p>
-                      <a href="mailto:support@defecttracker.com" className="text-xs font-semibold text-slate-700 hover:text-indigo-650 transition-colors">support@defecttracker.com</a>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Support Email</p>
+                      <a href="mailto:support@defecttracker.com" className="text-slate-700 hover:text-indigo-600 transition-colors">support@defecttracker.com</a>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-600 text-xs">
-                      📞
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Phone Support</p>
-                      <p className="text-xs font-semibold text-slate-700">+1 (800) 555-0199</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-600 text-xs">
-                      📍
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-150 flex items-center justify-center text-indigo-655 text-xs shrink-0">
+                      <MapPin className="w-4 h-4" />
                     </div>
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase">Headquarters</p>
-                      <p className="text-xs font-semibold text-slate-700 leading-relaxed">100 Pine Street, San Francisco, CA 94111</p>
+                      <p className="text-slate-700 leading-relaxed">San Francisco Workspace Area, California, USA</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Form Panel */}
+            {/* Fully Functional Contact Form */}
             <div className="lg:col-span-3">
-              <form onSubmit={(e) => { e.preventDefault(); alert('Message sent successfully! Our team will reach out shortly.'); }} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleContactSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Your Name</label>
-                    <input type="text" required className="input-field text-sm" placeholder="John Doe" />
+                    <input 
+                      type="text" 
+                      required 
+                      value={contactForm.name}
+                      onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                      disabled={submittingInquiry}
+                      className="input-field text-xs py-2 bg-slate-50 border-slate-200 focus:bg-white" 
+                      placeholder="John Doe" 
+                    />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Business Email</label>
-                    <input type="email" required className="input-field text-sm" placeholder="john@company.com" />
+                    <input 
+                      type="email" 
+                      required 
+                      value={contactForm.email}
+                      onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                      disabled={submittingInquiry}
+                      className="input-field text-xs py-2 bg-slate-50 border-slate-200 focus:bg-white" 
+                      placeholder="john@company.com" 
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Subject</label>
-                  <input type="text" required className="input-field text-sm" placeholder="e.g. Enterprise Migration Quote" />
+                  <input 
+                    type="text" 
+                    required 
+                    value={contactForm.subject}
+                    onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
+                    disabled={submittingInquiry}
+                    className="input-field text-xs py-2 bg-slate-50 border-slate-200 focus:bg-white" 
+                    placeholder="e.g. Enterprise Self-Hosting Query" 
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Message</label>
-                  <textarea required rows={4} className="input-field text-sm" placeholder="Describe your team size, custom needs, or questions..." />
+                  <textarea 
+                    required 
+                    rows={4} 
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                    disabled={submittingInquiry}
+                    className="input-field text-xs py-2 bg-slate-50 border-slate-200 focus:bg-white resize-none" 
+                    placeholder="Describe your team size, custom needs, or questions..." 
+                  />
                 </div>
 
                 <div className="flex justify-end">
-                  <button type="submit" className="btn-primary px-6 py-2.5 text-xs font-bold shadow-md shadow-indigo-100 cursor-pointer">
-                    Send Inquiry
+                  <button 
+                    type="submit" 
+                    disabled={submittingInquiry}
+                    className="btn-primary px-6 py-2.5 text-xs font-bold shadow-md shadow-indigo-100 cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    {submittingInquiry ? 'Sending...' : 'Send Inquiry'}
                   </button>
                 </div>
               </form>
@@ -400,12 +524,11 @@ const Home = () => {
         </div>
       </section>
 
-
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12 px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-slate-100">
             
             {/* Branding Column */}
             <div className="lg:col-span-2 space-y-4">
@@ -413,9 +536,9 @@ const Home = () => {
                 <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-md shadow-indigo-100">
                   <Bug className="w-5 h-5" />
                 </div>
-                <span className="text-base font-extrabold text-slate-950 tracking-tight">Defect Tracker</span>
+                <span className="text-base font-extrabold text-slate-955 tracking-tight">Defect Tracker</span>
               </div>
-              <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
+              <p className="text-xs text-slate-500 max-w-sm leading-relaxed font-semibold">
                 The enterprise-grade issue tracking platform built to align managers, testers, and developers on a unified quality engineering dashboard.
               </p>
               
@@ -429,33 +552,22 @@ const Home = () => {
             {/* Product Links */}
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Product</h4>
-              <ul className="space-y-2 text-xs font-semibold text-slate-500">
-                <li><a href="#features" className="hover:text-indigo-600 transition-colors">Features Matrix</a></li>
-                <li><a href="#workflow" className="hover:text-indigo-600 transition-colors">Workflow Pipeline</a></li>
-                <li><a href="#services" className="hover:text-indigo-600 transition-colors">Enterprise Services</a></li>
-                <li><a href="#contact" className="hover:text-indigo-600 transition-colors">Contact Support</a></li>
+              <ul className="space-y-2 text-xs font-bold text-slate-500">
+                <li><a href="#features" onClick={(e) => handleScrollTo(e, 'features')} className="hover:text-indigo-600 transition-colors">Features Matrix</a></li>
+                <li><a href="#workflow" onClick={(e) => handleScrollTo(e, 'workflow')} className="hover:text-indigo-600 transition-colors">Workflow Pipeline</a></li>
+                <li><a href="#services" onClick={(e) => handleScrollTo(e, 'services')} className="hover:text-indigo-600 transition-colors">Enterprise Services</a></li>
+                <li><a href="#contact" onClick={(e) => handleScrollTo(e, 'contact')} className="hover:text-indigo-600 transition-colors">Contact Support</a></li>
               </ul>
             </div>
 
             {/* Role Workflows Links */}
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Workspaces</h4>
-              <ul className="space-y-2 text-xs font-semibold text-slate-500">
+              <ul className="space-y-2 text-xs font-bold text-slate-500">
                 <li><Link to="/login" className="hover:text-indigo-600 transition-colors">Project Manager Backlog</Link></li>
                 <li><Link to="/login" className="hover:text-indigo-600 transition-colors">Tester Defect Log</Link></li>
                 <li><Link to="/login" className="hover:text-indigo-600 transition-colors">Developer Taskboards</Link></li>
                 <li><Link to="/login" className="hover:text-indigo-600 transition-colors">Admin Controller</Link></li>
-              </ul>
-            </div>
-
-            {/* Company & Legal Links */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Resources</h4>
-              <ul className="space-y-2 text-xs font-semibold text-slate-500">
-                <li><a href="#" className="hover:text-indigo-600 transition-colors">API Docs</a></li>
-                <li><a href="#" className="hover:text-indigo-600 transition-colors">Security Audit</a></li>
-                <li><a href="#" className="hover:text-indigo-600 transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-indigo-600 transition-colors">Terms of Service</a></li>
               </ul>
             </div>
 
@@ -464,15 +576,43 @@ const Home = () => {
           {/* Subfooter */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-slate-400">
             <p>© {new Date().getFullYear()} Defect Tracker Inc. Enterprise QA Engine. All rights reserved.</p>
-            <div className="flex items-center gap-6">
-              <a href="#" className="hover:text-indigo-600 transition-colors">Terms</a>
-              <a href="#" className="hover:text-indigo-600 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-indigo-600 transition-colors">Cookies</a>
-            </div>
           </div>
 
         </div>
       </footer>
+
+      {/* Demo Modal Overlay */}
+      {showDemoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <div className="bg-white dark:bg-slate-900 max-w-sm w-full rounded-2xl border border-slate-150 dark:border-slate-800 p-6 shadow-xl relative animate-scaleIn flex flex-col items-center text-center">
+            
+            <button 
+              onClick={() => setShowDemoModal(false)}
+              className="absolute top-4 right-4 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-650 cursor-pointer transition-colors"
+              aria-label="Close Modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 rounded-xl flex items-center justify-center mb-4">
+              <Laptop className="w-6 h-6" />
+            </div>
+
+            <h3 id="modal-title" className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Demo Coming Soon</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2.5 leading-relaxed font-semibold">
+              The automated walkthrough recording is currently being prepared. Check back shortly to watch the live simulation run!
+            </p>
+
+            <button 
+              onClick={() => setShowDemoModal(false)}
+              className="btn-primary w-full py-2.5 mt-5 text-xs font-bold cursor-pointer"
+            >
+              Acknowledge
+            </button>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

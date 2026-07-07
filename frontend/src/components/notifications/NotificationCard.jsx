@@ -70,23 +70,35 @@ const NotificationCard = ({ notification, onMarkRead, onView }) => {
           badge: 'Project'
         };
       case 'role_changed':
+      case 'api_key_regenerated':
+      case 'admin_password_changed':
+      case 'failed_login_attempt':
+      case 'admin_login':
         return {
           icon: Shield,
-          color: 'bg-teal-50 text-teal-700 dark:bg-teal-950/20 dark:text-teal-400 border-teal-100 dark:border-teal-900/30',
+          color: 'bg-teal-50 text-teal-750 dark:bg-teal-950/20 dark:text-teal-400 border border-teal-100 dark:border-teal-900/30',
           badge: 'Security'
         };
       case 'critical_defect':
         return {
           icon: AlertTriangle,
-          color: 'bg-rose-50 text-rose-700 dark:bg-rose-955/20 dark:text-rose-455 border-rose-100 dark:border-rose-900/30 font-bold',
+          color: 'bg-rose-50 text-rose-700 dark:bg-rose-955/20 dark:text-rose-455 border border-rose-100 dark:border-rose-900/30 font-bold',
           badge: 'Critical'
+        };
+      case 'storage_warning':
+        return {
+          icon: AlertTriangle,
+          color: 'bg-rose-50 text-rose-700 dark:bg-rose-955/20 dark:text-rose-455 border border-rose-100 dark:border-rose-900/30 font-bold',
+          badge: 'Warning'
         };
       case 'overdue_defect':
       case 'deadline_reminder':
+      case 'server_restart':
+      case 'database_backup':
         return {
           icon: Clock,
-          color: 'bg-orange-50 text-orange-700 dark:bg-orange-955/20 dark:text-orange-400 border-orange-100 dark:border-orange-900/30',
-          badge: 'Deadline'
+          color: 'bg-orange-50 text-orange-700 dark:bg-orange-955/20 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30',
+          badge: 'System'
         };
       default:
         return {

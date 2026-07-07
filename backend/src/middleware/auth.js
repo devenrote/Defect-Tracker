@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const AppError = require('../utils/AppError');
+const userRepository = require('../repositories/userRepository');
 
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -12,9 +13,29 @@ const authenticate = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Fetch user from DB to check status and session validity
+    const dbUser = await userRepository.findById(decoded.id);
+    if (!dbUser) {
+      return next(new AppError('User no longer exists.', 401));
+    }
+
+    if (dbUser.status === 'Disabled') {
+      return next(new AppError('Your account has been deactivated.', 401));
+    }
+
+    // Invalidation check (Logout from all devices / password changed)
+    if (dbUser.token_invalid_before) {
+      const invalidBefore = new Date(dbUser.token_invalid_before).getTime();
+      const tokenIssuedAt = decoded.iat * 1000;
+      if (tokenIssuedAt < invalidBefore) {
+        return next(new AppError('Session expired. Please log in again.', 401));
+      }
+    }
+
     req.user = {
       ...decoded,
-      role: decoded.role === 'super_admin' ? 'admin' : decoded.role
+      role: dbUser.role === 'super_admin' ? 'admin' : dbUser.role
     };
     next();
   } catch (error) {

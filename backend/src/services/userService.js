@@ -84,6 +84,13 @@ class UserService {
       throw new AppError('Only admins can change roles', 403);
     }
 
+    if (userData.email && userData.email !== user.email) {
+      const existing = await userRepository.findByEmail(userData.email);
+      if (existing && existing.id !== id) {
+        throw new AppError('Email is already registered by another user', 400);
+      }
+    }
+
     if (userData.password) {
       userData.password = await bcrypt.hash(userData.password, 10);
     }

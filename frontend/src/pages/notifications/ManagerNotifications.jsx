@@ -10,6 +10,8 @@ import NotificationSkeleton from '../../components/notifications/NotificationSke
 import { CheckCircle2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { ManagerNotificationService } from '../../services/notificationServices';
+
 const ManagerNotifications = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
@@ -21,7 +23,8 @@ const ManagerNotifications = () => {
   const fetchNotifications = async () => {
     try {
       const res = await notificationAPI.getAll();
-      setNotifications(res.data.data || []);
+      const raw = res.data.data || [];
+      setNotifications(ManagerNotificationService.getNotifications(raw));
     } catch {
       // Mock notifications in case backend api is offline
       setNotifications([

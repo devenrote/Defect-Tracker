@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import { notificationAPI } from '../../services/api';
+import { notificationAPI, defectAPI } from '../../services/api';
 import NotificationCard from '../../components/notifications/NotificationCard';
 import NotificationEmptyState from '../../components/notifications/NotificationEmptyState';
 import NotificationSkeleton from '../../components/notifications/NotificationSkeleton';
 import { CheckCircle2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import { TesterNotificationService } from '../../services/notificationServices';
 
 const TesterNotifications = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchNotifications = async () => {
     try {
-      const res = await notificationAPI.getAll();
-      setNotifications(res.data.data || []);
+      const [notifRes, defectsRes] = await Promise.all([
+        notificationAPI.getAll(),
+        defectAPI.getAll()
+      ]);
+      const raw = notifRes.data.data || [];
+      const defects = defectsRes.data.data || [];
+      setNotifications(TesterNotificationService.getNotifications(raw, user.id, defects, user.full_name));
     } catch {
       // Mock fallback
       setNotifications([

@@ -11,6 +11,8 @@ const commentRoutes = require('./routes/commentRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 
+const publicRoutes = require('./routes/publicRoutes');
+
 const path = require('path');
 
 const app = express();
@@ -32,6 +34,7 @@ app.get('/api/health', async (req, res, next) => {
   }
 });
 
+app.use('/api', publicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);

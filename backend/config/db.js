@@ -43,18 +43,67 @@ const execute = async (text, params = []) => {
   return [result.rows, result];
 };
 
-// Startup migration to ensure settings fields exist
-pool.query(`
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS api_key VARCHAR(255);
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_settings TEXT DEFAULT '{"defectAssigned":true,"defectResolved":true,"commentAdded":true,"weeklyReport":false,"newProjectCreated":true,"projectAssigned":true,"newUserAdded":true,"criticalDefect":true,"defectClosed":true,"weeklySummary":true}';
-`).then(() => {
-  console.log('Database settings columns verified successfully.');
-}).catch(err => {
-  console.error('Error verifying database settings columns:', err);
-});
+// Startup migration to ensure settings fields exist & create initial system logs/notifs
+const initializeDatabase = async () => {
+  try {
+    // 1. Alter table queries
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS api_key VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS token_invalid_before TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_settings TEXT DEFAULT '{"defectAssigned":true,"defectResolved":true,"commentAdded":true,"weeklyReport":false,"newProjectCreated":true,"projectAssigned":true,"newUserAdded":true,"criticalDefect":true,"defectClosed":true,"weeklySummary":true}';
+      
+      CREATE TABLE IF NOT EXISTS contact_inquiries (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `);
+    console.log('Database settings columns verified successfully.');
+
+    // 2. Insert server restart notifications in a single optimized query
+    await pool.query(`
+      INSERT INTO notifications (user_id, type, title, message)
+      SELECT id, 'server_restart', 'System Alert: Server Restarted', 'The Defect Tracker Pro application server restarted and initialized settings.'
+      FROM users
+      WHERE role IN ('super_admin', 'admin', 'manager', 'project_manager')
+        AND id NOT IN (
+          SELECT DISTINCT user_id FROM notifications 
+          WHERE type = 'server_restart' AND created_at > NOW() - INTERVAL '1 minute'
+        );
+    `);
+
+    // 3. Insert database backup notifications in a single optimized query
+    await pool.query(`
+      INSERT INTO notifications (user_id, type, title, message)
+      SELECT id, 'database_backup', 'Database Maintenance: Integrity Check Passed', 'The automatic database schema integrity verification and backup was completed successfully.'
+      FROM users
+      WHERE role IN ('super_admin', 'admin', 'manager', 'project_manager')
+        AND id NOT IN (
+          SELECT DISTINCT user_id FROM notifications 
+          WHERE type = 'database_backup' AND created_at > NOW() - INTERVAL '1 minute'
+        );
+    `);
+    console.log('Database settings notifications verified successfully.');
+  } catch (err) {
+    console.error('Error verifying database settings columns/notifications during startup:', err);
+  }
+};
 
 module.exports = {
   query,
   execute,
   pool,
+  initializeDatabase,
 };

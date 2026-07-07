@@ -34,6 +34,7 @@ const Sidebar = () => {
         { to: '/defects', label: 'Defects', icon: Bug },
         { to: '/users', label: 'Users', icon: Users },
         { to: '/reports', label: 'Reports', icon: BarChart3 },
+        { to: '/notifications', label: 'Notifications', icon: Bell },
       ];
     }
     

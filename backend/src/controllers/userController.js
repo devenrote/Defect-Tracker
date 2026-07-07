@@ -48,6 +48,26 @@ class UserController {
       next(error);
     }
   }
+
+  async generateApiKey(req, res, next) {
+    try {
+      const crypto = require('crypto');
+      const secureKey = `dt_live_${crypto.randomBytes(24).toString('hex')}`;
+      await userService.updateUser(req.user.id, { api_key: secureKey }, req.user);
+      
+      const notificationRepository = require('../repositories/notificationRepository');
+      await notificationRepository.notifyAdminsAndManagers(
+        'api_key_regenerated',
+        'API Key Regenerated',
+        `Admin "${req.user.full_name}" has regenerated the system API key.`,
+        req.user.id
+      );
+
+      res.json({ success: true, api_key: secureKey });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new UserController();
