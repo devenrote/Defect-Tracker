@@ -218,12 +218,14 @@ const ManagerDashboard = () => {
             value={stats?.totalProjects || 0} 
             icon={FolderKanban} 
             color="primary" 
+            onClick={() => navigate('/projects')}
           />
           <StatCard 
             title="Total Defects" 
             value={stats?.totalDefects || 0} 
             icon={Bug} 
             color="primary" 
+            onClick={() => navigate('/defects')}
           />
           <StatCard 
             title="Open Defects" 
@@ -244,7 +246,7 @@ const ManagerDashboard = () => {
             value={stats?.pendingAssignment || 0} 
             icon={User} 
             color="purple" 
-            onClick={() => navigate('/defects', { state: { filter: { assignee: 'unassigned' } } })}
+            onClick={() => navigate('/defects', { state: { filter: { status: 'Open' } } })}
           />
           <StatCard 
             title="Ready For QA" 

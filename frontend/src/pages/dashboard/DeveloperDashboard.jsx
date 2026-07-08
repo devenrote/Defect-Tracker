@@ -170,36 +170,42 @@ const DeveloperDashboard = () => {
             value={stats?.totalProjects || 0} 
             icon={FolderKanban} 
             color="primary" 
+            onClick={() => navigate('/projects')}
           />
           <StatCard 
             title="Active Users" 
             value={stats?.totalUsers || 0} 
             icon={Users} 
             color="purple" 
+            onClick={() => navigate('/projects')}
           />
           <StatCard 
             title="My Assignments" 
             value={stats?.totalDefects || 0} 
             icon={Bug} 
             color="primary" 
+            onClick={() => navigate('/assigned-defects')}
           />
           <StatCard 
             title="My Open" 
             value={stats?.openDefects || 0} 
             icon={Clock} 
             color="yellow" 
+            onClick={() => navigate('/assigned-defects', { state: { filter: { status: 'Open' } } })}
           />
           <StatCard 
             title="My Resolved" 
             value={stats?.resolvedDefects || 0} 
             icon={CheckCircle2} 
             color="green" 
+            onClick={() => navigate('/assigned-defects', { state: { filter: { status: 'Resolved' } } })}
           />
           <StatCard 
             title="My Critical" 
             value={stats?.criticalDefects || 0} 
             icon={AlertTriangle} 
             color="red" 
+            onClick={() => navigate('/assigned-defects', { state: { filter: { severity: 'Critical' } } })}
           />
         </div>
 

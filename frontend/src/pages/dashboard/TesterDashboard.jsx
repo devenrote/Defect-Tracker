@@ -173,36 +173,42 @@ const TesterDashboard = () => {
             value={stats?.totalProjects || 0} 
             icon={FolderKanban} 
             color="primary" 
+            onClick={() => navigate('/projects')}
           />
           <StatCard 
             title="Pending Verification" 
             value={stats?.pendingVerification || 0} 
             icon={Clock} 
             color="yellow" 
+            onClick={() => navigate('/verification-queue')}
           />
           <StatCard 
             title="My Reported Defects" 
             value={stats?.totalDefects || 0} 
             icon={Bug} 
             color="primary" 
+            onClick={() => navigate('/my-defects')}
           />
           <StatCard 
             title="Open Defects" 
             value={stats?.openDefects || 0} 
             icon={AlertTriangle} 
             color="red" 
+            onClick={() => navigate('/my-defects', { state: { filter: { status: 'Open' } } })}
           />
           <StatCard 
             title="Closed Defects" 
             value={stats?.closedDefects || 0} 
             icon={CheckCircle2} 
             color="green" 
+            onClick={() => navigate('/my-defects', { state: { filter: { status: 'Closed' } } })}
           />
           <StatCard 
             title="Critical Defects" 
             value={stats?.criticalDefects || 0} 
             icon={AlertTriangle} 
             color="red" 
+            onClick={() => navigate('/my-defects', { state: { filter: { severity: 'Critical' } } })}
           />
         </div>
 
