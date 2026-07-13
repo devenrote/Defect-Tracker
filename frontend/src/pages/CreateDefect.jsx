@@ -131,7 +131,7 @@ const CreateDefect = () => {
             <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 rounded-xl p-6 text-center cursor-pointer transition-colors relative">
               <input
                 type="file"
-                accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.xls,.xlsx"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.gif,.bmp,.txt,.rtf,.csv,.ppt,.pptx,.zip,.rar,.7z,.log,.json,.xml"
                 onChange={(e) => setScreenshot(e.target.files[0])}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />

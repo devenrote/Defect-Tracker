@@ -293,6 +293,13 @@ class DefectRepository {
         whereClause += ' AND project_id = ?';
         params1.push(filters.project_id);
       }
+    } else if (filters.role === 'tester') {
+      whereClause += ' AND reporter_id = ?';
+      params1.push(filters.user_id);
+      if (filters.project_id) {
+        whereClause += ' AND project_id = ?';
+        params1.push(filters.project_id);
+      }
     } else if (filters.project_id) {
       whereClause += ' AND project_id = ?';
       params1.push(filters.project_id);
@@ -305,6 +312,13 @@ class DefectRepository {
     const params2 = [];
     if (filters.role === 'developer') {
       histWhereClause += ' AND i.assignee_id = ?';
+      params2.push(filters.user_id);
+      if (filters.project_id) {
+        histWhereClause += ' AND i.project_id = ?';
+        params2.push(filters.project_id);
+      }
+    } else if (filters.role === 'tester') {
+      histWhereClause += ' AND i.reporter_id = ?';
       params2.push(filters.user_id);
       if (filters.project_id) {
         histWhereClause += ' AND i.project_id = ?';

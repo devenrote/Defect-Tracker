@@ -9,8 +9,28 @@ const pool = require('../config/database');
 
 const uploadToCloudinary = (file) => {
   return new Promise((resolve, reject) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const baseName = path.basename(file.originalname, ext);
+    // Normalize baseName: keep alphanumeric, dashes, and underscores
+    const safeBaseName = baseName.replace(/[^a-zA-Z0-9-_]/g, '_');
+    
+    // Add unique suffix
+    const uniqueSuffix = `${Date.now()}_${Math.round(Math.random() * 1e4)}`;
+    const uniquePublicIdWithoutExt = `${safeBaseName}_${uniqueSuffix}`;
+    
+    const isImageOrPdf = [
+      '.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg', '.pdf'
+    ].includes(ext);
+    
+    const resourceType = isImageOrPdf ? 'image' : 'raw';
+    const publicId = isImageOrPdf ? uniquePublicIdWithoutExt : `${uniquePublicIdWithoutExt}${ext}`;
+
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'Defect-Tracker', resource_type: 'auto' },
+      { 
+        folder: 'Defect-Tracker', 
+        resource_type: resourceType,
+        public_id: publicId
+      },
       (error, result) => {
         if (error) reject(error);
         else resolve(result.secure_url);
@@ -149,6 +169,38 @@ class DefectService {
       reported_by: user.id,
       status: defectData.assigned_to ? 'Assigned' : 'Open',
     });
+
+    if (file && screenshot_url) {
+      let client;
+      let committed = false;
+      try {
+        client = await pool.pool.connect();
+        await client.query('BEGIN');
+
+        await client.query(
+          `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by)
+           VALUES ($1, $2, $3, $4)`,
+          [defect.id, file.originalname, screenshot_url, user.id]
+        );
+
+        await client.query('COMMIT');
+        committed = true;
+      } catch (insertError) {
+        if (client && !committed) {
+          try {
+            await client.query('ROLLBACK');
+          } catch (rollbackError) {
+            console.error('Failed to rollback transaction:', rollbackError);
+          }
+        }
+        console.error('Failed to save attachment to issue_attachments:', insertError);
+        throw insertError;
+      } finally {
+        if (client) {
+          client.release();
+        }
+      }
+    }
 
     try {
       const [projRows] = await pool.execute('SELECT project_name FROM projects WHERE id = ?', [defect.project_id]);
@@ -499,7 +551,41 @@ class DefectService {
       }
     }
 
-    return defectRepository.update(id, defectData);
+    const updatedDefect = await defectRepository.update(id, defectData);
+
+    if (file && screenshot_url) {
+      let client;
+      let committed = false;
+      try {
+        client = await pool.pool.connect();
+        await client.query('BEGIN');
+
+        await client.query(
+          `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by)
+           VALUES ($1, $2, $3, $4)`,
+          [id, file.originalname, screenshot_url, user.id]
+        );
+
+        await client.query('COMMIT');
+        committed = true;
+      } catch (insertError) {
+        if (client && !committed) {
+          try {
+            await client.query('ROLLBACK');
+          } catch (rollbackError) {
+            console.error('Failed to rollback transaction:', rollbackError);
+          }
+        }
+        console.error('Failed to save attachment to issue_attachments:', insertError);
+        throw insertError;
+      } finally {
+        if (client) {
+          client.release();
+        }
+      }
+    }
+
+    return updatedDefect;
   }
 
   async deleteDefect(id) {
@@ -605,7 +691,7 @@ class DefectService {
 
       stats.totalProjects = parseInt(membersRows[0].count, 10) || 0;
       stats.totalDefects = parseInt(rawReportedDefects, 10) || 0;
-      stats.openDefects = (parseInt(rawOpenDefects, 10) || 0) + (parseInt(rawReopenedDefects, 10) || 0);
+      stats.openDefects = parseInt(rawOpenDefects, 10) || 0;
       stats.pendingVerification = (parseInt(rawResolvedDefects, 10) || 0) + (parseInt(rawTestingDefects, 10) || 0);
       stats.closedDefects = parseInt(rawClosedDefects, 10) || 0;
       stats.criticalDefects = parseInt(rawCriticalDefects, 10) || 0;
@@ -624,12 +710,7 @@ class DefectService {
 
       stats.recentDefects = await defectRepository.findAll({ reported_by: userId, project_id: projectId, limit: 5 });
       
-      const rawMonthlyTrend = await defectRepository.getMonthlyTrends({ user_id: userId, role: 'tester', project_id: projectId });
-      stats.monthlyTrend = rawMonthlyTrend.map((row) => ({
-        month: row.month,
-        defects: parseInt(row.count, 10) || 0,
-        resolved: 0
-      }));
+      stats.monthlyTrend = await defectRepository.getMonthlyTrends({ user_id: userId, role: 'tester', project_id: projectId });
 
       stats.assignedToMe = [];
     } else if (role === 'developer') {

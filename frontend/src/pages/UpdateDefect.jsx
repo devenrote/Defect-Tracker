@@ -408,7 +408,7 @@ const UpdateDefect = () => {
                       <div className="border border-dashed border-slate-200 dark:border-slate-800 hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition-colors relative flex flex-col md:flex-row items-center gap-3 justify-center bg-slate-50/30 dark:bg-slate-850/10">
                         <input
                           type="file"
-                          accept=".jpg,.jpeg,.png,.webp,.gif,.pdf"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.gif,.bmp,.txt,.rtf,.csv,.ppt,.pptx,.zip,.rar,.7z,.log,.json,.xml"
                           onChange={handleFileChange}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
@@ -422,15 +422,39 @@ const UpdateDefect = () => {
                       </div>
 
                       {/* Existing / Preview image */}
-                      {screenshotPreview && (
-                        <div className="mt-3.5 relative rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-36 max-w-xs bg-slate-100 flex items-center justify-center">
-                          <img
-                            src={screenshotPreview}
-                            alt="Screenshot preview"
-                            className="max-h-36 object-contain"
-                          />
-                        </div>
-                      )}
+                      {screenshotPreview && (() => {
+                        const isImage = (url) => {
+                          if (!url) return false;
+                          const ext = url.split('?')[0].split('.').pop().toLowerCase();
+                          return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext);
+                        };
+                        return isImage(screenshotPreview) ? (
+                          <div className="mt-3.5 relative rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-36 max-w-xs bg-slate-100 flex items-center justify-center">
+                            <img
+                              src={screenshotPreview}
+                              alt="Screenshot preview"
+                              className="max-h-36 object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-850/40 border border-slate-205 dark:border-slate-800 rounded-xl flex items-center justify-between gap-2.5 max-w-xs">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileText className="w-5 h-5 text-brand-605 shrink-0" />
+                              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350 truncate">
+                                {screenshotPreview.split('/').pop()}
+                              </span>
+                            </div>
+                            <a 
+                              href={screenshotPreview} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="btn-secondary text-[10px] py-1 px-2.5 font-bold shadow-xs shrink-0"
+                            >
+                              Open
+                            </a>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                   </div>
@@ -573,7 +597,7 @@ const UpdateDefect = () => {
                       <div className="border border-dashed border-slate-200 dark:border-slate-800 hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition-colors relative flex flex-col items-center gap-2 justify-center bg-slate-50/30">
                         <input
                           type="file"
-                          accept=".jpg,.jpeg,.png,.webp,.gif,.pdf"
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.gif,.bmp,.txt,.rtf,.csv,.ppt,.pptx,.zip,.rar,.7z,.log,.json,.xml"
                           onChange={handleFileChange}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />

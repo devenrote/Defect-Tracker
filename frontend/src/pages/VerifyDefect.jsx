@@ -10,7 +10,8 @@ import {
   Calendar,
   MessageSquare,
   Upload,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -276,15 +277,39 @@ const VerifyDefect = () => {
               {/* Before Screenshot */}
               <div>
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Before Screenshot (Original)</h4>
-                {defect.screenshot_url ? (
-                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-32 bg-slate-100">
-                    <img 
-                      src={defect.screenshot_url} 
-                      alt="Before fix" 
-                      className="w-full h-32 object-cover"
-                    />
-                  </div>
-                ) : (
+                {defect.screenshot_url ? (() => {
+                  const isImage = (url) => {
+                    if (!url) return false;
+                    const ext = url.split('?')[0].split('.').pop().toLowerCase();
+                    return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext);
+                  };
+                  return isImage(defect.screenshot_url) ? (
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-32 bg-slate-100">
+                      <img 
+                        src={defect.screenshot_url} 
+                        alt="Before fix" 
+                        className="w-full h-32 object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-slate-50 dark:bg-slate-850/40 border border-slate-205 dark:border-slate-800 rounded-xl flex items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-5 h-5 text-brand-605 shrink-0" />
+                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-350 truncate">
+                          {defect.screenshot_url.split('/').pop()}
+                        </span>
+                      </div>
+                      <a 
+                        href={defect.screenshot_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="btn-secondary text-[10px] py-1 px-2.5 font-bold shadow-xs shrink-0"
+                      >
+                        Open
+                      </a>
+                    </div>
+                  );
+                })() : (
                   <div className="p-4 bg-slate-50 dark:bg-slate-850/40 border border-slate-200/50 dark:border-slate-800 rounded-xl text-center text-[10px] text-slate-400">
                     No screenshot submitted.
                   </div>
@@ -448,7 +473,7 @@ const VerifyDefect = () => {
                 <div className="border border-dashed border-slate-200 dark:border-slate-800 hover:border-brand-500 rounded-xl p-3 text-center cursor-pointer transition-colors relative flex items-center gap-2 justify-center bg-slate-50/20">
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,.webp,.gif,.pdf"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.gif,.bmp,.txt,.rtf,.csv,.ppt,.pptx,.zip,.rar,.7z,.log,.json,.xml"
                     onChange={(e) => setReopenFile(e.target.files[0])}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />

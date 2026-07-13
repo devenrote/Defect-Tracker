@@ -18,7 +18,8 @@ import {
   Printer,
   ChevronRight,
   UserCheck,
-  Download
+  Download,
+  X 
 } from 'lucide-react';
 import Layout from '../../components/Layout';
 import StatusBadge from '../../components/StatusBadge';
@@ -86,6 +87,72 @@ const AdminDefectDetails = () => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [previewAttachment, setPreviewAttachment] = useState(null);
+  const [textContent, setTextContent] = useState('');
+  const [loadingText, setLoadingText] = useState(false);
+
+  const handlePreview = async (attachment) => {
+    const ext = attachment.file_name.split('.').pop().toLowerCase();
+    
+    // For Office files, behave exactly like Open (open original Cloudinary URL in a new tab)
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+      window.open(attachment.file_url, '_blank');
+      return;
+    }
+    
+    setPreviewAttachment(attachment);
+    
+    if (['txt', 'log', 'json', 'xml', 'csv'].includes(ext)) {
+      setLoadingText(true);
+      setTextContent('');
+      try {
+        const res = await fetch(attachment.file_url);
+        if (res.ok) {
+          const text = await res.text();
+          setTextContent(text);
+        } else {
+          setTextContent('Failed to fetch file content. You can still open the file directly.');
+        }
+      } catch (err) {
+        setTextContent('Could not preview file content inline due to network/CORS restrictions. Please click "Open in New Window" to view the content directly.');
+      } finally {
+        setLoadingText(false);
+      }
+    }
+  };
+
+  const handleOpen = (attachment) => {
+    const ext = attachment.file_name.split('.').pop().toLowerCase();
+    const openInTabExtensions = [
+      'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+      'pdf',
+      'txt', 'log', 'csv', 'json', 'xml',
+      'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+      'zip', 'rar', '7z'
+    ];
+    if (openInTabExtensions.includes(ext)) {
+      window.open(attachment.file_url, '_blank');
+    } else {
+      handleDownload(attachment);
+    }
+  };
+
+  const handleDownload = async (attachment) => {
+    try {
+      const response = await fetch(attachment.file_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', attachment.file_name);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      window.open(attachment.file_url, '_blank');
+    }
+  };
   
   // Project Context states
   const [projectStats, setProjectStats] = useState(null);
@@ -184,21 +251,12 @@ const AdminDefectDetails = () => {
 
   const getFileIcon = (fileName) => {
     const ext = fileName.split('.').pop().toLowerCase();
-    if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext)) return Image;
+    if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext)) return Image;
     if (['mp4', 'mov', 'avi', 'mkv'].includes(ext)) return Video;
     return FileText;
   };
 
-  const combinedAttachments = [
-    ...(defect.screenshot_url ? [{
-      id: 'initial-screenshot',
-      file_name: defect.screenshot_url.split('/').pop() || 'screenshot.jpg',
-      file_url: defect.screenshot_url,
-      uploaded_by_name: defect.reporter_name || 'Reporter',
-      uploaded_at: defect.created_at
-    }] : []),
-    ...(defect.attachments || [])
-  ];
+  const combinedAttachments = defect.attachments || [];
 
   const getAuditTimeline = () => {
     const feed = [];
@@ -604,7 +662,6 @@ const AdminDefectDetails = () => {
                 </div>
               )}
 
-              {/* ACTIVITY TAB (Chronological Audit Log) */}
               {activeTab === 'activity' && (
                 <div className="card p-4 space-y-4 bg-white dark:bg-slate-900 shadow-xs animate-fadeIn">
                   <h3 className="text-xs font-bold text-slate-805 dark:text-white pb-2 border-b border-slate-100 dark:border-slate-800 uppercase tracking-wider">
@@ -612,7 +669,7 @@ const AdminDefectDetails = () => {
                   </h3>
                   
                   <div className="relative border-l-2 border-slate-200 dark:border-slate-800 ml-4 pl-6 space-y-5 pt-1">
-                    {auditTimeline.map((item) => {
+                    {auditTimeline.map((item, index) => {
                       const Icon = item.icon;
                       const dateStr = item.timestamp.toLocaleDateString();
                       const timeStr = item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -622,23 +679,28 @@ const AdminDefectDetails = () => {
                           <span className={`absolute -left-[33px] top-0.5 rounded-full p-1 text-white shrink-0 ${item.color} shadow-sm ring-4 ring-white dark:ring-slate-900`}>
                             <Icon className="w-2.5 h-2.5" />
                           </span>
-                          <div className="space-y-0.5 text-slate-707 dark:text-slate-300">
-                            <div className="flex items-center justify-between">
-                              <span className="font-extrabold text-slate-900 dark:text-white">
-                                {item.user} <span className="font-medium text-slate-500">logged:</span> <strong className="text-indigo-600 dark:text-indigo-400 capitalize">{item.action.replace('_', ' ')}</strong>
-                              </span>
-                              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{dateStr} {timeStr}</span>
+                          <div className="flex items-start gap-3">
+                            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-600 dark:bg-brand-500 text-white font-bold text-[11px] shrink-0">
+                              {index + 1}
                             </div>
-                            <div className="bg-slate-50/50 dark:bg-slate-855/15 p-2 rounded-lg border border-slate-100 dark:border-slate-800/80 mt-1 space-y-0.5 text-[11px]">
-                              {item.action !== 'Comment Added' && item.action !== 'Attachment Uploaded' && item.action !== 'Created' && (
+                            <div className="space-y-0.5 text-slate-707 dark:text-slate-300 flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-slate-900 dark:text-white">
+                                  {item.user} <span className="font-medium text-slate-500">logged:</span> <strong className="text-indigo-600 dark:text-indigo-400 capitalize">{item.action.replace('_', ' ')}</strong>
+                                </span>
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{dateStr} {timeStr}</span>
+                              </div>
+                              <div className="bg-slate-50/50 dark:bg-slate-855/15 p-2 rounded-lg border border-slate-100 dark:border-slate-800/80 mt-1 space-y-0.5 text-[11px]">
+                                {item.action !== 'Comment Added' && item.action !== 'Attachment Uploaded' && item.action !== 'Created' && (
+                                  <p className="text-slate-450 dark:text-slate-500 font-bold">
+                                    OLD VALUE: <span className="text-slate-707 dark:text-slate-300 font-semibold">{item.oldVal}</span>
+                                  </p>
+                                )}
                                 <p className="text-slate-450 dark:text-slate-500 font-bold">
-                                  OLD VALUE: <span className="text-slate-707 dark:text-slate-300 font-semibold">{item.oldVal}</span>
+                                  {item.action === 'Comment Added' ? 'COMMENT:' : item.action === 'Attachment Uploaded' ? 'FILE:' : 'NEW VALUE:'}{' '}
+                                  <span className="text-slate-707 dark:text-slate-300 font-semibold">{item.newVal}</span>
                                 </p>
-                              )}
-                              <p className="text-slate-450 dark:text-slate-500 font-bold">
-                                {item.action === 'Comment Added' ? 'COMMENT:' : item.action === 'Attachment Uploaded' ? 'FILE:' : 'NEW VALUE:'}{' '}
-                                <span className="text-slate-707 dark:text-slate-300 font-semibold">{item.newVal}</span>
-                              </p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -762,15 +824,32 @@ const AdminDefectDetails = () => {
                             
                             <div className="flex items-center gap-1.5 shrink-0 ml-3">
                               {att.file_url && att.file_url !== '#' && (
-                                <a 
-                                  href={att.file_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="p-1 text-slate-400 hover:text-brand-600 rounded hover:bg-white dark:hover:bg-slate-800"
-                                  title="Download File"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </a>
+                                <>
+                                  <button 
+                                    type="button"
+                                    onClick={() => handlePreview(att)} 
+                                    className="p-1 text-slate-400 hover:text-brand-600 rounded hover:bg-white dark:hover:bg-slate-800 font-bold"
+                                    title="Preview"
+                                  >
+                                    👁
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={() => handleOpen(att)} 
+                                    className="p-1 text-slate-400 hover:text-brand-600 rounded hover:bg-white dark:hover:bg-slate-800 font-bold"
+                                    title="Open"
+                                  >
+                                    🔗
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={() => handleDownload(att)} 
+                                    className="p-1 text-slate-400 hover:text-brand-600 rounded hover:bg-white dark:hover:bg-slate-800"
+                                    title="Download File"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                </>
                               )}
                             </div>
                           </div>
@@ -925,6 +1004,112 @@ const AdminDefectDetails = () => {
         </div>
 
       </div>
+      {previewAttachment && (() => {
+        const ext = previewAttachment.file_name.split('.').pop().toLowerCase();
+        const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext);
+        const isPdf = ext === 'pdf';
+        const isText = ['txt', 'log', 'json', 'xml', 'csv'].includes(ext);
+        const isArchive = ['zip', 'rar', '7z'].includes(ext);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 animate-slideUp">
+              {/* Header */}
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-white truncate">
+                    Preview: {previewAttachment.file_name}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider font-semibold">
+                    Format: {ext}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPreviewAttachment(null)}
+                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 overflow-auto flex-1 flex items-center justify-center min-h-[300px] bg-slate-50/50 dark:bg-slate-950/20">
+                {isImage && (
+                  <img
+                    src={previewAttachment.file_url}
+                    alt={previewAttachment.file_name}
+                    className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm"
+                  />
+                )}
+
+                {isPdf && (
+                  <iframe
+                    src={previewAttachment.file_url}
+                    title={previewAttachment.file_name}
+                    className="w-full h-[60vh] rounded-lg border border-slate-200 dark:border-slate-800"
+                  />
+                )}
+
+                {isText && (
+                  <div className="w-full">
+                    {loadingText ? (
+                      <div className="text-center py-8">
+                        <LoadingSpinner className="w-6 h-6 mx-auto text-brand-500" />
+                        <p className="text-xs text-slate-400 mt-2 font-medium">Loading content...</p>
+                      </div>
+                    ) : (
+                      <pre className="p-4 bg-slate-955 text-slate-202 rounded-xl text-[11px] font-mono overflow-auto max-h-[55vh] border border-slate-800 leading-relaxed whitespace-pre-wrap break-all">
+                        <code>{textContent}</code>
+                      </pre>
+                    )}
+                  </div>
+                )}
+
+                {isArchive && (
+                  <div className="text-center py-10 max-w-md">
+                    <div className="w-16 h-16 bg-amber-50 dark:bg-amber-955/30 text-amber-550 rounded-2xl flex items-center justify-center mx-auto shadow-xs mb-4">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Preview not available</h4>
+                    <p className="text-[11px] text-slate-400 mt-2 font-medium leading-relaxed">
+                      Preview is not available for archive files. Please download the file.
+                    </p>
+                  </div>
+                )}
+
+                {!isImage && !isPdf && !isText && !isArchive && (
+                  <div className="text-center py-10 max-w-md">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <FileText className="w-8 h-8" />
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Preview not supported</h4>
+                    <p className="text-[11px] text-slate-400 mt-2 font-medium leading-relaxed">
+                      This file type cannot be previewed directly. Please use Open or Download.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2 bg-slate-50/50 dark:bg-slate-900/50">
+                <button
+                  onClick={() => handleOpen(previewAttachment)}
+                  className="btn-secondary text-xs px-4 py-1.5 font-semibold"
+                >
+                  Open in New Window
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownload(previewAttachment)}
+                  className="btn-primary text-xs px-4 py-1.5 font-bold bg-brand-600 hover:bg-brand-700 text-white"
+                >
+                  Download File
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </Layout>
   );
 };

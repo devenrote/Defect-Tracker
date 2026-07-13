@@ -279,7 +279,7 @@ const AdminDashboard = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={stats?.defectsByStatus} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800" />
-                      <XAxis dataKey="name" fontSize={10} stroke="#94a3b8" tickLine={false} />
+                      <XAxis dataKey="name" fontSize={10} stroke="#94a3b8" tickLine={false} tick={false} />
                       <YAxis fontSize={10} stroke="#94a3b8" tickLine={false} axisLine={false} />
                       <Tooltip 
                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
