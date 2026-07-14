@@ -147,11 +147,34 @@ const Home = () => {
     setSubmittingInquiry(true);
     try {
       await publicAPI.submitContact(contactForm);
+      
+      // Submit same data to Web3Forms for email routing
+      const web3Response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          access_key: '7b5a906d-1b45-4d56-861a-09155eec40dd',
+          name: contactForm.name,
+          email: contactForm.email,
+          subject: contactForm.subject,
+          message: contactForm.message,
+          from_name: 'Defect-Tracker'
+        })
+      });
+      
+      const web3Result = await web3Response.json();
+      if (!web3Result.success) {
+        throw new Error(web3Result.message || 'Email delivery failed via Web3Forms');
+      }
+
       toast.success('Inquiry submitted successfully! Our team will reach out shortly.');
       setContactForm({ name: '', email: '', subject: '', message: '' });
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || 'Failed to submit inquiry. Please try again.');
+      toast.error(err.response?.data?.message || err.message || 'Failed to submit inquiry. Please try again.');
     } finally {
       setSubmittingInquiry(false);
     }
