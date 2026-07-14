@@ -1,26 +1,82 @@
-# Defect Tracker
+# Defect Tracker Pro
 
-A production-ready defect tracking system for software companies. Manage bugs, assign defects to developers, track status workflows, upload screenshots, and monitor project health through role-based dashboards.
+Defect Tracker Pro is a professional, enterprise-grade defect and bug tracking system featuring role-based access control (RBAC) designed for software development and QA teams to manage issues throughout their complete lifecycle.
 
-## Tech Stack
+---
 
-| Layer | Technologies |
-|-------|-------------|
-| Frontend | React.js, Tailwind CSS, Axios, React Router DOM, React Hook Form, Chart.js |
-| Backend | Node.js, Express.js, JWT, bcryptjs, Multer, Cloudinary |
-| Database | PostgreSQL |
+## Key Features
 
-## Architecture
+- **Authentication & Security**: Secure user logins and registration powered by JSON Web Tokens (JWT) and hashed passwords (`bcryptjs`).
+- **Role-Based Access Control (RBAC)**: Detailed workflow and visibility restriction across four distinct user roles (Admin, Manager, Developer, Tester).
+- **Interactive Dashboards**: Role-specific dashboard layouts utilizing `recharts` and `Chart.js` charts displaying real-time metrics (Open defects, Monthly trends, Severity ratios, etc.).
+- **Project Management**: Creation and updates of projects with deadlines, priority, and assigned team members.
+- **Defect Reporting & Assignment**: Standardized defect logging forms with screen/file attachments.
+- **Verification Queue**: A dedicated queue where testers verify resolved issues. Enforces strict reporter privacy: testers only see resolved issues they originally created.
+- **Activity Timeline**: Logged timestamps of defect progress, assignments, and file uploads.
+- **Discussion System**: Comment threads on defect pages supporting updates, edits, and deletions.
+- **Attachment Management**: Cloudinary-powered file storage with segregated folder paths.
+- **Reports & Analytics**: Custom search, date-range filtering, and project statistics exports.
+- **Data Exporting**: Local client-side generation of CSV, Excel (CSV format compatibility), and PDF reports.
+- **Contact Us Form**: Customer landing page form integrated with local database storage and instant email delivery via **Web3Forms**.
+- **Responsive Modern UI**: Sleek layout styled using Tailwind CSS and Lucide Icons.
+
+---
+
+## User Roles
+
+### 👑 Admin
+- Complete project management capabilities (create, update, delete).
+- System-wide user roster management.
+- Creation, updates, and deletion of any defects across all projects.
+- Analytics generation and reports exporting.
+
+### 💼 Manager
+- General project overview and stats inspection.
+- Allocation and assignment of defects to developers.
+- Changing and updating defect status or description notes.
+- Logging actions and adding discussion comments.
+
+### 💻 Developer
+- Overview of defects specifically assigned to their queue.
+- Progress transitions (status changes to In Progress, Analysis Started, Resolved).
+- Submission of resolution notes, technical updates, and attachments (stored under `'EVIDENCE'`).
+
+### 🧪 Tester
+- Reporting new defects with screenshots (stored under `'REPORT'`).
+- Dedicated **Verification Queue** featuring defects they reported that developers resolved.
+- Verification workflows: Mark resolved issues as Closed or Reopen them back to the queue.
+
+---
+
+## Defect Workflow
+
+The standard defect resolution path progresses as follows:
 
 ```
-Frontend (React + Vite)
-        ↓ REST API
-Backend (Node.js + Express)
-        ↓
-PostgreSQL Database
-        ↓
-Cloudinary (Screenshot Storage)
+Tester Reports Defect (Status: Open)
+         ↓
+Manager Assigns Defect to Developer (Status: Assigned)
+         ↓
+Developer Begins Work (Status: In Progress / Analysis Started)
+         ↓
+Developer Fixes Issue & Uploads Evidence (Status: Resolved / Ready For QA)
+         ↓
+Tester Reviews Fix (Verification Queue)
+       ↙   ↘
+Closed      Reopened (Returns to Assigned)
 ```
+
+---
+
+## Technology Stack
+
+- **Frontend**: React.js (Vite), Tailwind CSS, Lucide Icons, React Router DOM, Axios, Chart.js, Recharts, React Hot Toast.
+- **Backend**: Node.js, Express.js, Multer, JWT, bcryptjs.
+- **Database**: PostgreSQL (pg client pool).
+- **File Storage**: Cloudinary (utilizing folder segregation: `Defect-Tracker/` and `Defect-Tracker/evidence-attachments/`).
+- **Form Mailer**: Web3Forms API.
+
+---
 
 ## Folder Structure
 
@@ -28,182 +84,124 @@ Cloudinary (Screenshot Storage)
 Defect-Tracker/
 ├── backend/
 │   ├── src/
-│   │   ├── config/          # Database & Cloudinary config
+│   │   ├── config/          # Database & Cloudinary configurations
 │   │   ├── controllers/     # Request handlers (MVC)
-│   │   ├── middleware/      # Auth, upload, validation, errors
-│   │   ├── repositories/    # Data access layer
+│   │   ├── middleware/      # Auth, uploads, validations, error handling
+│   │   ├── repositories/    # Database query models
 │   │   ├── routes/          # API route definitions
 │   │   ├── services/        # Business logic layer
-│   │   ├── utils/           # JWT, AppError utilities
-│   │   ├── validators/      # Input validation rules
-│   │   ├── app.js             # Express app setup
-│   │   └── server.js          # Server entry point
+│   │   ├── utils/           # JWT, AppError helpers
+│   │   └── app.js           # Express app definition
 │   ├── scripts/
-│   │   └── seed.js            # Database seeder
-│   ├── package.json
-│   └── .env.example
+│   │   ├── init-db.js       # Database initialization
+│   │   ├── seed.js          # Demo data loader
+│   │   └── migrate.js       # Table modification migrations
+│   ├── server.js            # Server entrypoint
+│   └── package.json
 ├── frontend/
 │   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── context/         # Auth context provider
-│   │   ├── pages/           # Page components by role
-│   │   ├── services/        # API service layer
-│   │   ├── App.jsx          # Route definitions
-│   │   ├── main.jsx         # App entry
-│   │   └── index.css        # Tailwind styles
+│   │   ├── components/      # Common components (Sidebar, Layout, badges)
+│   │   ├── context/         # AuthContext provider
+│   │   ├── pages/           # Pages (Home, Login, role-specific components)
+│   │   ├── services/        # Client API service wrapper
+│   │   ├── App.jsx          # Router & layout mappings
+│   │   └── main.jsx         # React application bootstrap
 │   ├── package.json
 │   └── vite.config.js
 ├── database/
-│   ├── schema.sql           # PostgreSQL schema
-│   └── sample-data.sql      # Sample data reference
-├── DEPLOYMENT.md            # Deployment guide
-└── README.md
+│   ├── schema.sql           # Database tables blueprint
+│   └── sample-data.sql      # Seed inserts file
+├── DEPLOYMENT.md            # Production deployment guide
+└── README.md                # System documentation
 ```
 
-## User Roles
+---
 
-| Role | Capabilities |
-|------|-------------|
-| **Admin** | Create projects, manage users, assign defects, view all defects, generate reports |
-| **Tester** | Report defects, upload screenshots, view reported defects, verify fixes, add comments |
-| **Developer** | View assigned defects, update status, add comments, mark as resolved |
-
-## Defect Status Workflow
-
-```
-Open → Assigned → In Progress → Resolved → Verified → Closed
-```
-
-## Quick Start
+## Installation & Setup
 
 ### Prerequisites
-
-- Node.js 18+
-- PostgreSQL 14+
-- Cloudinary account (for screenshot uploads)
+- Node.js (v18+)
+- PostgreSQL (v14+)
+- Cloudinary Account
+- Web3Forms Access Key
 
 ### 1. Database Setup
-
+Create your local PostgreSQL database and load the schema:
 ```bash
 createdb defect_tracker_pro
 psql -U postgres -d defect_tracker_pro -f database/schema.sql
 ```
 
 ### 2. Backend Setup
-
-```bash
-cd backend
-cp .env.example .env
-# Edit .env with your database and Cloudinary credentials
-npm install
-npm run init-db
-npm run seed
-npm run dev
-```
+1. Navigate to the backend directory and copy the environment template:
+   ```bash
+   cd backend
+   cp .env.example .env
+   ```
+2. Populate the `.env` file with your credentials:
+   ```env
+   PORT=5000
+   DB_HOST=localhost
+   DB_USER=postgres
+   DB_PASSWORD=your_postgres_password
+   DB_NAME=defect_tracker_pro
+   DB_PORT=5432
+   DB_SSL=false
+   JWT_SECRET=your_super_secure_jwt_key
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   FRONTEND_URL=http://localhost:5173
+   ```
+3. Install dependencies, run DB setup scripts, and start the developer server:
+   ```bash
+   npm install
+   npm run init-db
+   npm run seed
+   npm run dev
+   ```
 
 ### 3. Frontend Setup
+1. Navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Install dependencies and start the Vite dev server:
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
+### 4. Application Endpoints
+- **Frontend App**: `http://localhost:5173`
+- **Backend API**: `http://localhost:5000`
 
-### 4. Access the Application
+---
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000/api/health
-
-## Demo Credentials
+## Demo Access Credentials
 
 | Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@defecttracker.com | Password123! |
-| Tester | tester@defecttracker.com | Password123! |
-| Developer | developer@defecttracker.com | Password123! |
+|---|---|---|
+| **Admin** | `admin@defecttracker.com` | `Password123!` |
+| **Manager** | `manager@defecttracker.com` | `Password123!` |
+| **Developer** | `developer@defecttracker.com` | `Password123!` |
+| **Tester** | `tester@defecttracker.com` | `Password123!` |
 
-## API Endpoints
+---
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login and get JWT token |
+## Screenshots Placeholder
 
-### Projects (Admin)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/projects` | List all projects |
-| POST | `/api/projects` | Create project |
-| PUT | `/api/projects/:id` | Update project |
-| DELETE | `/api/projects/:id` | Delete project |
-| GET | `/api/projects/:id/statistics` | Project defect stats |
+- **Landing Page**: `![Landing Page Placeholder](https://placehold.co/800x450?text=Landing+Page)`
+- **Admin Dashboard**: `![Admin Dashboard Placeholder](https://placehold.co/800x450?text=Admin+Dashboard)`
+- **Manager Dashboard**: `![Manager Dashboard Placeholder](https://placehold.co/800x450?text=Manager+Dashboard)`
+- **Developer Dashboard**: `![Developer Dashboard Placeholder](https://placehold.co/800x450?text=Developer+Dashboard)`
+- **Tester Dashboard**: `![Tester Dashboard Placeholder](https://placehold.co/800x450?text=Tester+Dashboard)`
+- **Reports**: `![Reports Page Placeholder](https://placehold.co/800x450?text=Reports+Page)`
+- **Defect Details**: `![Defect Details Placeholder](https://placehold.co/800x450?text=Defect+Details)`
+- **Verification Queue**: `![Verification Queue Placeholder](https://placehold.co/800x450?text=Verification+Queue)`
 
-### Defects
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/defects` | List defects (with filters) |
-| GET | `/api/defects/:id` | Get defect details |
-| POST | `/api/defects` | Create defect (multipart for screenshot) |
-| PUT | `/api/defects/:id` | Update defect |
-| DELETE | `/api/defects/:id` | Delete defect (Admin) |
-| GET | `/api/defects/dashboard/stats` | Dashboard statistics |
-| GET | `/api/defects/reports` | Reports data (Admin) |
-
-### Comments
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/comments/:defectId` | Get comments for defect |
-| POST | `/api/comments` | Add comment |
-| PUT | `/api/comments/:id` | Edit own comment |
-| DELETE | `/api/comments/:id` | Delete own comment |
-
-### Users
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/users` | List users (Admin) |
-| PUT | `/api/users/:id` | Update user profile |
-
-### Notifications
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/notifications` | Get user notifications |
-| PUT | `/api/notifications/:id/read` | Mark as read |
-| PUT | `/api/notifications/read-all` | Mark all as read |
-
-## Environment Variables
-
-### Backend (.env)
-
-```env
-PORT=5000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=defect_tracker_pro
-JWT_SECRET=your_secret_key
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-FRONTEND_URL=http://localhost:5173
-```
-
-## Features
-
-- JWT authentication with role-based authorization
-- Password hashing with bcrypt
-- Screenshot upload via Multer + Cloudinary (jpg, jpeg, png, webp, max 5MB)
-- Real-time notification system
-- Defect status timeline/history
-- Interactive dashboards with Chart.js
-- Search, filter, and pagination on data tables
-- Toast notifications and loading states
-- Responsive modern UI with Tailwind CSS
-- MVC architecture with Repository/Service pattern
-- Centralized error handling
-- Input validation with express-validator
+---
 
 ## License
 
-MIT
+Defect Tracker Pro is released under the [MIT License](LICENSE).
