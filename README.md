@@ -1,4 +1,4 @@
-# Defect Tracker Pro
+# Defect-Tracker
 
 Defect Tracker Pro is a professional, enterprise-grade defect and bug tracking system featuring role-based access control (RBAC) designed for software development and QA teams to manage issues throughout their complete lifecycle.
 
