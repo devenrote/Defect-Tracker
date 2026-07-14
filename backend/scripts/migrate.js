@@ -43,6 +43,12 @@ const migrate = async () => {
       ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE;
     `);
 
+    // Add attachment_type to issue_attachments table
+    await pool.query(`
+      ALTER TABLE issue_attachments
+      ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(50) DEFAULT 'REPORT';
+    `);
+
     console.log('Migrations completed successfully!');
   } catch (error) {
     console.error('Migration failed:', error);

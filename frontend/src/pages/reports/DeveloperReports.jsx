@@ -30,41 +30,15 @@ const DeveloperReports = () => {
       try {
         const res = await defectAPI.getReports();
         setReports(res.data.data);
-      } catch {
-        // Fallback mock report details
+      } catch (err) {
+        console.error('Error fetching developer reports:', err);
+        toast.error('Failed to load reports from database.');
         setReports({
-          byProject: [
-            { project_name: 'Project Alpha Integration', count: 18 },
-            { project_name: 'Defect Tracker Pro Client', count: 12 },
-            { project_name: 'Mobile Gateway API Wrapper', count: 8 }
-          ],
-          bySeverity: [
-            { severity: 'Critical', count: 6 },
-            { severity: 'High', count: 10 },
-            { severity: 'Medium', count: 14 },
-            { severity: 'Low', count: 8 }
-          ],
-          byDeveloper: [
-            { developer_name: 'John Developer', count: 9 },
-            { developer_name: 'Alice Dev', count: 7 },
-            { developer_name: 'Robert PM (unassigned)', count: 2 }
-          ],
-          byStatus: [
-            { status: 'Open', count: 5 },
-            { status: 'Assigned', count: 7 },
-            { status: 'In Progress', count: 6 },
-            { status: 'Resolved', count: 12 },
-            { status: 'Testing', count: 4 },
-            { status: 'Closed', count: 4 }
-          ],
-          monthlyTrends: [
-            { month: 'Jan', count: 8 },
-            { month: 'Feb', count: 15 },
-            { month: 'Mar', count: 12 },
-            { month: 'Apr', count: 22 },
-            { month: 'May', count: 26 },
-            { month: 'Jun', count: 38 }
-          ]
+          byProject: [],
+          bySeverity: [],
+          byDeveloper: [],
+          byStatus: [],
+          monthlyTrends: []
         });
       } finally {
         setLoading(false);

@@ -40,6 +40,44 @@ const ManagerReports = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [dateRangeOption, setDateRangeOption] = useState('all');
+
+  const formatDateLocal = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const handleDateRangeChange = (option) => {
+    setDateRangeOption(option);
+    const now = new Date();
+    
+    if (option === 'today') {
+      const todayStr = formatDateLocal(now);
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (option === '7days') {
+      const past = new Date(now.getTime() - 7 * 86400000);
+      setStartDate(formatDateLocal(past));
+      setEndDate(formatDateLocal(now));
+    } else if (option === '30days') {
+      const past = new Date(now.getTime() - 30 * 86400000);
+      setStartDate(formatDateLocal(past));
+      setEndDate(formatDateLocal(now));
+    } else if (option === 'thisMonth') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      setStartDate(formatDateLocal(firstDay));
+      setEndDate(formatDateLocal(lastDay));
+    } else if (option === 'all') {
+      setStartDate('');
+      setEndDate('');
+    } else if (option === 'custom') {
+      setStartDate('');
+      setEndDate('');
+    }
+  };
 
   const loadAllData = async () => {
     setLoading(true);
@@ -53,23 +91,12 @@ const ManagerReports = () => {
       setProjects(projRes.data.data || []);
       setUsers(usersRes.data.data || []);
       setDefects(defectsRes.data.data || []);
-    } catch {
-      // Mock fallback data if offline
-      setProjects([
-        { id: 1, project_name: 'Project Alpha Integration', name: 'Project Alpha Integration' },
-        { id: 2, project_name: 'Defect Tracker Pro Client', name: 'Defect Tracker Pro Client' },
-        { id: 3, project_name: 'Mobile Gateway API Wrapper', name: 'Mobile Gateway API Wrapper' }
-      ]);
-      setUsers([
-        { id: 2, full_name: 'John Developer', role: 'developer' },
-        { id: 5, full_name: 'Alice Dev', role: 'developer' },
-        { id: 3, full_name: 'David Tester', role: 'tester' }
-      ]);
-      setDefects([
-        { id: 1, title: 'Database connection pools timeout', project_id: 1, project_name: 'Project Alpha Integration', severity: 'Critical', priority: 'High', status: 'In Progress', assignee_id: 2, assignee_name: 'John Developer', reporter_id: 3, reporter_name: 'David Tester', created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
-        { id: 2, title: 'Auth tokens expire prematurely', project_id: 3, project_name: 'Mobile Gateway API Wrapper', severity: 'High', priority: 'High', status: 'Open', assignee_id: null, assignee_name: 'Unassigned', reporter_id: 3, reporter_name: 'David Tester', created_at: new Date(Date.now() - 10 * 86400000).toISOString() },
-        { id: 3, title: 'UI alignment layout breaks on iOS', project_id: 2, project_name: 'Defect Tracker Pro Client', severity: 'Medium', priority: 'Medium', status: 'Resolved', assignee_id: 5, assignee_name: 'Alice Dev', reporter_id: 3, reporter_name: 'David Tester', created_at: new Date(Date.now() - 2 * 86400000).toISOString() }
-      ]);
+    } catch (err) {
+      console.error('Error loading manager reports data:', err);
+      toast.error('Failed to load real-time database reports analytics.');
+      setProjects([]);
+      setUsers([]);
+      setDefects([]);
     } finally {
       setLoading(false);
     }
@@ -353,26 +380,47 @@ const ManagerReports = () => {
               </select>
             </div>
 
-            {/* Start Date */}
+            {/* Date Range Option */}
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase">Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+              <label className="text-[10px] text-slate-400 font-semibold uppercase">Date Range</label>
+              <select
+                value={dateRangeOption}
+                onChange={(e) => handleDateRangeChange(e.target.value)}
                 className="input-field py-1"
-              />
+              >
+                <option value="all">All-Time</option>
+                <option value="today">Today</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="30days">Last 30 Days</option>
+                <option value="thisMonth">This Month</option>
+                <option value="custom">Custom Range</option>
+              </select>
             </div>
 
-            {/* End Date */}
-            <div className="space-y-1">
-              <label className="text-[10px] text-slate-400 font-semibold uppercase">End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="input-field py-1"
-              />
+            {/* Custom Range Inputs */}
+            <div className="space-y-1 col-span-1">
+              {dateRangeOption === 'custom' ? (
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="input-field py-0.5 text-[10px]"
+                    placeholder="Start"
+                  />
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="input-field py-0.5 text-[10px]"
+                    placeholder="End"
+                  />
+                </div>
+              ) : (
+                <div className="text-[10px] text-slate-400 pt-5 italic">
+                  Preset active
+                </div>
+              )}
             </div>
 
           </div>

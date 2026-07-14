@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS issue_attachments (
   file_url VARCHAR(1000) NOT NULL,
   uploaded_by BIGINT NOT NULL,
   uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  attachment_type VARCHAR(50) NOT NULL DEFAULT 'REPORT',
   FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE,
   FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
 );

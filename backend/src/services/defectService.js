@@ -7,7 +7,7 @@ const activityRepository = require('../repositories/activityRepository');
 const AppError = require('../utils/AppError');
 const pool = require('../config/database');
 
-const uploadToCloudinary = (file) => {
+const uploadToCloudinary = (file, folder = 'Defect-Tracker') => {
   return new Promise((resolve, reject) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const baseName = path.basename(file.originalname, ext);
@@ -27,7 +27,7 @@ const uploadToCloudinary = (file) => {
 
     const stream = cloudinary.uploader.upload_stream(
       { 
-        folder: 'Defect-Tracker', 
+        folder: folder, 
         resource_type: resourceType,
         public_id: publicId
       },
@@ -73,17 +73,16 @@ class DefectService {
 
     let client;
     let committed = false;
-
     try {
-      const fileUrl = await uploadToCloudinary(file);
+      const fileUrl = await uploadToCloudinary(file, 'Defect-Tracker/evidence-attachments');
       client = await pool.pool.connect();
       await client.query('BEGIN');
 
       const insertResult = await client.query(
-        `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, issue_id, file_name, file_url, uploaded_by, uploaded_at`,
-        [defectId, file.originalname, fileUrl, user.id]
+        `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by, attachment_type)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, issue_id, file_name, file_url, uploaded_by, uploaded_at, attachment_type`,
+        [defectId, file.originalname, fileUrl, user.id, 'EVIDENCE']
       );
 
       await client.query('COMMIT');
@@ -178,9 +177,9 @@ class DefectService {
         await client.query('BEGIN');
 
         await client.query(
-          `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by)
-           VALUES ($1, $2, $3, $4)`,
-          [defect.id, file.originalname, screenshot_url, user.id]
+          `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by, attachment_type)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [defect.id, file.originalname, screenshot_url, user.id, 'REPORT']
         );
 
         await client.query('COMMIT');
@@ -561,9 +560,9 @@ class DefectService {
         await client.query('BEGIN');
 
         await client.query(
-          `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by)
-           VALUES ($1, $2, $3, $4)`,
-          [id, file.originalname, screenshot_url, user.id]
+          `INSERT INTO issue_attachments (issue_id, file_name, file_url, uploaded_by, attachment_type)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [id, file.originalname, screenshot_url, user.id, 'REPORT']
         );
 
         await client.query('COMMIT');

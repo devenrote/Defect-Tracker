@@ -62,6 +62,9 @@ const AdminReports = () => {
       start = new Date(now.getTime() - 7 * 86400000);
     } else if (dateRangeOption === '30days') {
       start = new Date(now.getTime() - 30 * 86400000);
+    } else if (dateRangeOption === 'thisMonth') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     } else if (dateRangeOption === '90days') {
       start = new Date(now.getTime() - 90 * 86400000);
     } else if (dateRangeOption === 'year') {
@@ -252,6 +255,7 @@ const AdminReports = () => {
               <option value="today">Today</option>
               <option value="7days">Last 7 Days</option>
               <option value="30days">Last 30 Days</option>
+              <option value="thisMonth">This Month</option>
               <option value="90days">Last 90 Days</option>
               <option value="year">This Year</option>
               <option value="custom">Custom Range</option>

@@ -90,7 +90,7 @@ export const defectAPI = {
   },
   delete: (id) => api.delete(`/defects/${id}`),
   getDashboardStats: (params) => api.get('/defects/dashboard/stats', { params }),
-  getReports: () => api.get('/defects/reports'),
+  getReports: (params) => api.get('/defects/reports', { params }),
   uploadAttachment: (id, data) => api.post(`/defects/${id}/attachments`, data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),

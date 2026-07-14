@@ -20,6 +20,11 @@ class DefectRepository {
       params.push(filters.user_id);
     }
 
+    if (filters.role === 'tester' && filters.status === 'Resolved') {
+      query += ' AND d.reporter_id = ?';
+      params.push(filters.user_id);
+    }
+
     if (filters.project_id) {
       query += ' AND d.project_id = ?';
       params.push(filters.project_id);

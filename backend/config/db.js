@@ -51,6 +51,7 @@ const initializeDatabase = async () => {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS api_key VARCHAR(255);
       ALTER TABLE users ADD COLUMN IF NOT EXISTS token_invalid_before TIMESTAMP WITH TIME ZONE;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_settings TEXT DEFAULT '{"defectAssigned":true,"defectResolved":true,"commentAdded":true,"weeklyReport":false,"newProjectCreated":true,"projectAssigned":true,"newUserAdded":true,"criticalDefect":true,"defectClosed":true,"weeklySummary":true}';
+      ALTER TABLE issue_attachments ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(50) DEFAULT 'REPORT';
       
       CREATE TABLE IF NOT EXISTS contact_inquiries (
         id SERIAL PRIMARY KEY,
