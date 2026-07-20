@@ -131,7 +131,8 @@ Create your local PostgreSQL database and load the schema:
 createdb defect_tracker_pro
 psql -U postgres -d defect_tracker_pro -f database/schema.sql
 ```
-
+##Contribution
+Documentation review and update.
 ### 2. Backend Setup
 1. Navigate to the backend directory and copy the environment template:
    ```bash
