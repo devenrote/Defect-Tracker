@@ -50,6 +50,7 @@ Defect Tracker Pro is a professional, enterprise-grade defect and bug tracking s
 
 ## Defect Workflow
 
+
 The standard defect resolution path progresses as follows:
 
 ```
@@ -206,3 +207,5 @@ Documentation review and update.
 ## License
 
 Defect Tracker Pro is released under the [MIT License](LICENSE).
+##Feedback 
+If you have any suggestions,feature requests or feedback regarding the defect tracker,feel free to open an issue in this repository.
